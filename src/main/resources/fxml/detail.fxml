@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="org.example.ui.DetailController" styleClass="card details-card" stylesheets="@/styles/details.css" prefWidth="900" prefHeight="480">
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-padding: 8 12 8 12;">
+            <Label text="Warranty Details" styleClass="card-title" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Label fx:id="lblStatus" styleClass="status-label" />
+        </HBox>
+    </top>
+    <center>
+        <HBox spacing="28" alignment="TOP_LEFT" style="-fx-padding: 16;" styleClass="details-content">
+            <!-- Left: textual details, progress, and recommendations -->
+            <VBox spacing="14" prefWidth="560" styleClass="details-grid">
+                <GridPane hgap="12" vgap="10">
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="28" />
+                        <ColumnConstraints percentWidth="72" />
+                    </columnConstraints>
+
+                    <Label text="Product:" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="info-label" />
+                    <Label fx:id="lblProduct" GridPane.rowIndex="0" GridPane.columnIndex="1" />
+
+                    <Label text="Model:" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="info-label" />
+                    <Label fx:id="lblModel" GridPane.rowIndex="1" GridPane.columnIndex="1" />
+
+                    <Label text="Retailer:" GridPane.rowIndex="2" GridPane.columnIndex="0" styleClass="info-label" />
+                    <Label fx:id="lblRetailer" GridPane.rowIndex="2" GridPane.columnIndex="1" />
+
+                    <Label text="Purchased:" GridPane.rowIndex="3" GridPane.columnIndex="0" styleClass="info-label" />
+                    <Label fx:id="lblPurchase" GridPane.rowIndex="3" GridPane.columnIndex="1" />
+
+                    <Label text="Expires:" GridPane.rowIndex="4" GridPane.columnIndex="0" styleClass="info-label" />
+                    <Label fx:id="lblExpiry" GridPane.rowIndex="4" GridPane.columnIndex="1" />
+
+                    <Label text="Duration:" GridPane.rowIndex="5" GridPane.columnIndex="0" styleClass="info-label" />
+                    <Label fx:id="lblMonths" GridPane.rowIndex="5" GridPane.columnIndex="1" />
+                </GridPane>
+
+                <VBox spacing="8" style="-fx-padding: 6 0 0 0;" styleClass="progress-section">
+                    <Label text="Warranty Progress" styleClass="progress-title" />
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <ProgressBar fx:id="warrantyProgress" prefWidth="420" styleClass="progress-bar" />
+                        <Label fx:id="lblPercent" styleClass="progress-label" />
+                    </HBox>
+                </VBox>
+
+                <!-- Recommendations inside details -->
+                <VBox spacing="8" style="-fx-padding: 8 0 0 0;">
+                    <Label text="Recommendations" styleClass="card-title" />
+                    <HBox spacing="8" alignment="CENTER_LEFT">
+                        <Button text="Get for this warranty" onAction="#onGetRecommendations" styleClass="primary-btn" />
+                        <Label text="(opens official sites)" />
+                    </HBox>
+                    <ListView fx:id="recommendationsList" prefHeight="220" />
+                </VBox>
+
+                <HBox spacing="10" alignment="CENTER_LEFT" styleClass="footer-actions">
+                    <Region HBox.hgrow="ALWAYS" />
+                    <Button text="Delete Warranty" onAction="#onDelete" styleClass="delete-button" />
+                    <Button text="Close" onAction="#onClose" styleClass="close-button" />
+                </HBox>
+            </VBox>
+
+            <!-- Right: Product image + receipt thumbnail -->
+            <VBox spacing="14" alignment="TOP_CENTER" prefWidth="340">
+                <StackPane styleClass="image-frame" prefWidth="300" prefHeight="320">
+                    <ImageView fx:id="productImage" fitWidth="300" fitHeight="320" preserveRatio="true" pickOnBounds="true" />
+                </StackPane>
+                <Label text="Receipt" styleClass="file-title" />
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <StackPane styleClass="file-image" prefWidth="120" prefHeight="80">
+                        <ImageView fx:id="receiptImage" fitWidth="120" fitHeight="80" preserveRatio="true" />
+                    </StackPane>
+                    <VBox alignment="CENTER_LEFT" spacing="6">
+                        <Button text="Open Receipt" onAction="#onViewReceipt" styleClass="outline-btn" />
+                        <Button text="Attach / Replace" onAction="#onShowOrAttachReceipt" styleClass="outline-btn" />
+                    </VBox>
+                </HBox>
+            </VBox>
+        </HBox>
+    </center>
+</BorderPane>
