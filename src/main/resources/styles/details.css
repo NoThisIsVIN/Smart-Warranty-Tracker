@@ -1,0 +1,86 @@
+/* Detail view modern polish */
+
+.details-card {
+	-fx-background-color: linear-gradient(to bottom right, -color-surface, #fbfdff);
+	-fx-background-radius: 16;
+	-fx-padding: 22 24 24 24;
+	-fx-effect: dropshadow(gaussian, rgba(16,24,40,0.14), 22, 0.28, 0, 8);
+	-fx-border-color: -color-border;
+	-fx-border-radius: 16;
+}
+
+.card-title { -fx-font-size: 20px; -fx-font-weight: 800; -fx-text-fill: -color-text; }
+
+.details-grid .label, .info-label { -fx-text-fill: -color-muted; }
+.details-grid Label { -fx-font-size: 14px; }
+
+.status-label {
+	-fx-background-color: #e2e8f0;
+	-fx-text-fill: #334155;
+	-fx-padding: 6 12;
+	-fx-background-radius: 999;
+	-fx-font-size: 12px;
+	-fx-font-weight: 800;
+}
+.badge-expired { -fx-background-color: #fee2e2; -fx-text-fill: #991b1b; }
+.badge-active { -fx-background-color: #dcfce7; -fx-text-fill: #166534; }
+
+.progress-title { -fx-font-size: 13px; -fx-text-fill: #334155; -fx-font-weight: 700; }
+.progress-bar .bar { -fx-background-insets: 0; -fx-background-radius: 10; }
+.progress-bar .track { -fx-background-radius: 10; -fx-background-color: #e5e7eb; }
+.progress-bar:indeterminate .bar { -fx-background-color: linear-gradient(to right, -brand, #22c55e); }
+.progress-label { -fx-text-fill: -color-text; -fx-font-weight: 700; }
+
+/* Buttons inside detail view */
+.outline-btn {
+	-fx-background-color: transparent;
+	-fx-border-color: #94a3b8;
+	-fx-border-radius: 999;
+	-fx-border-width: 2;
+	-fx-background-radius: 999;
+	-fx-text-fill: #334155;
+	-fx-font-weight: 700;
+	-fx-padding: 10 16;
+}
+.outline-btn:hover { -fx-background-color: rgba(148,163,184,0.12); }
+
+.delete-button {
+	-fx-background-color: linear-gradient(to bottom, #f87171, #ef4444);
+	-fx-text-fill: white;
+	-fx-font-weight: 800;
+	-fx-background-radius: 999;
+	-fx-padding: 10 18;
+	-fx-effect: dropshadow(gaussian, rgba(239,68,68,0.30), 14, 0.26, 0, 3);
+}
+.delete-button:hover { -fx-background-color: linear-gradient(to bottom, #dc2626, #b91c1c); }
+
+.close-button {
+	-fx-background-color: #e5e7eb;
+	-fx-text-fill: #111827;
+	-fx-font-weight: 700;
+	-fx-background-radius: 999;
+	-fx-padding: 10 18;
+}
+.close-button:hover { -fx-background-color: #d1d5db; }
+
+.image-frame {
+	-fx-background-color: #f1f5f9;
+	-fx-background-radius: 14;
+	-fx-padding: 12;
+	-fx-border-color: #e2e8f0;
+	-fx-border-radius: 14;
+	-fx-effect: dropshadow(gaussian, rgba(16,24,40,0.10), 12, 0.24, 0, 4);
+}
+.file-title { -fx-text-fill: #334155; -fx-font-weight: 700; }
+.file-image { -fx-background-color: #f8fafc; -fx-background-radius: 12; -fx-border-color: #e2e8f0; -fx-border-radius: 12; }
+
+/* Chips */
+.chip { -fx-background-color: #eef2ff; -fx-text-fill: #1e40af; -fx-padding: 6 10; -fx-background-radius: 999; -fx-font-weight: 700; }
+.chip-success { -fx-background-color: #dcfce7; -fx-text-fill: #166534; }
+.chip-warning { -fx-background-color: #fef3c7; -fx-text-fill: #92400e; }
+
+.footer-actions { -fx-padding: 12 0 0 0; }
+.details-content { -fx-background-color: transparent; }
+.progress-section { -fx-padding: 8 0 0 0; }
+
+

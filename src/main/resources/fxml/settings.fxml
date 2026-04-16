@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns:fx="http://javafx.com/fxml" spacing="14" alignment="CENTER_LEFT" fx:controller="org.example.ui.SettingsController" styleClass="card" >
+    <Label text="Settings" styleClass="card-title" />
+    <GridPane hgap="12" vgap="12" styleClass="info-grid">
+        <Label text="Reminder days (notify before):" GridPane.rowIndex="0" GridPane.columnIndex="0" />
+        <TextField fx:id="reminderField" GridPane.rowIndex="0" GridPane.columnIndex="1" />
+
+        <Label text="Theme:" GridPane.rowIndex="1" GridPane.columnIndex="0" />
+        <ChoiceBox fx:id="themeChoice" GridPane.rowIndex="1" GridPane.columnIndex="1" />
+        
+        <Separator GridPane.rowIndex="2" GridPane.columnIndex="0" GridPane.columnSpan="2" />
+        <Label text="API Keys" GridPane.rowIndex="3" GridPane.columnIndex="0" />
+        <Label text="Google Vision API Key:" GridPane.rowIndex="4" GridPane.columnIndex="0" />
+        <TextField fx:id="googleVisionKeyField" promptText="AIza..." GridPane.rowIndex="4" GridPane.columnIndex="1" />
+        <Label text="OCR.space API Key:" GridPane.rowIndex="5" GridPane.columnIndex="0" />
+        <TextField fx:id="ocrSpaceKeyField" promptText="helloworld (demo)" GridPane.rowIndex="5" GridPane.columnIndex="1" />
+        
+    <!-- Mail settings removed -->
+    </GridPane>
+    <HBox spacing="10" alignment="CENTER_RIGHT" styleClass="footer-actions">
+        <Button text="Test Notification" onAction="#onSendTestNotification" styleClass="outline-btn" />
+        <Region HBox.hgrow="ALWAYS" />
+        <Button text="Cancel" onAction="#onCancel" styleClass="outline-btn" />
+        <Button text="Save" onAction="#onSave" styleClass="primary-btn" />
+    </HBox>
+</VBox>

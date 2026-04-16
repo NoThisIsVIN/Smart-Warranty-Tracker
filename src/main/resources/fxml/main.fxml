@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="org.example.ui.MainController">
+    <!-- LEFT SIDEBAR -->
+    <left>
+        <VBox spacing="18" alignment="TOP_CENTER" styleClass="sidebar">
+            <VBox alignment="TOP_LEFT">
+                <Label text="SMART  WARRANTY" wrapText="true" maxWidth="Infinity" styleClass="logo-main" />
+                <Label text="TRACKER" wrapText="true" maxWidth="Infinity" styleClass="logo-main" />
+            </VBox>
+            <Separator />
+            <VBox spacing="14" styleClass="nav">
+                <Button fx:id="btnDashboard" text="Home" styleClass="nav-btn" onAction="#onShowDashboard" />
+                <Button text="Add Product" styleClass="nav-btn" onAction="#onAddProduct" />
+                <Button fx:id="btnReminders" text="Notifications" styleClass="nav-btn" onAction="#onShowReminders" />
+            </VBox>
+
+            <Separator />
+            <Label text="PRODUCTS" styleClass="logo-sub" />
+            <ListView fx:id="productList" prefHeight="200" styleClass="nav-list" VBox.vgrow="ALWAYS" />
+        </VBox>
+    </left>
+
+    <!-- TOP HEADER removed -->
+
+    <!-- CENTER: Search + Card with table -->
+    <center>
+        <HBox spacing="12">
+            <VBox spacing="14" styleClass="center-area" HBox.hgrow="ALWAYS">
+            <HBox alignment="CENTER_LEFT" spacing="8" styleClass="header">
+                <Label text="Home" styleClass="header-title" />
+            </HBox>
+            <HBox alignment="CENTER_RIGHT" spacing="8" styleClass="toolbar">
+                <Region HBox.hgrow="ALWAYS" />
+                <Button text="Settings" onAction="#onOpenSettings" styleClass="outline-btn" />
+            </HBox>
+            <HBox spacing="8" alignment="CENTER_LEFT" styleClass="search-bar">
+                <TextField fx:id="searchField" promptText="Search product or model..." />
+                <Button fx:id="btnSearch" text="Search" styleClass="outline-btn" onAction="#onSearch" />
+            </HBox>
+
+            <!-- Dashboard Pane (default) -->
+            <StackPane fx:id="dashboardPane" styleClass="card">
+                <VBox spacing="8">
+                    <Label text="Your Warranties" styleClass="card-title" />
+                    <!-- Card grid layout -->
+                    <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="card-scroll">
+                        <FlowPane fx:id="cardGrid" hgap="24" vgap="24" styleClass="card-grid" prefWrapLength="800" />
+                    </ScrollPane>
+                </VBox>
+            </StackPane>
+
+            <!-- Reminders Pane (hidden until selected) -->
+            <StackPane fx:id="remindersPane" styleClass="card" visible="false" managed="false">
+                <VBox spacing="10">
+                    <Label text="Reminders" styleClass="card-title" />
+                    <ListView fx:id="remindersList" prefHeight="300" />
+                </VBox>
+            </StackPane>
+
+            
+            </VBox>
+        </HBox>
+    </center>
+
+    <!-- FLOATING ACTION (visual only) -->
+    <bottom>
+        <Pane />
+    </bottom>
+</BorderPane>
