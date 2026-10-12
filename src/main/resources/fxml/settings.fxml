@@ -1,29 +1,69 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<VBox xmlns:fx="http://javafx.com/fxml" spacing="14" alignment="CENTER_LEFT" fx:controller="org.example.ui.SettingsController" styleClass="card" >
-    <Label text="Settings" styleClass="card-title" />
-    <GridPane hgap="12" vgap="12" styleClass="info-grid">
-        <Label text="Reminder days (notify before):" GridPane.rowIndex="0" GridPane.columnIndex="0" />
-        <TextField fx:id="reminderField" GridPane.rowIndex="0" GridPane.columnIndex="1" />
 
-        <Label text="Theme:" GridPane.rowIndex="1" GridPane.columnIndex="0" />
-        <ChoiceBox fx:id="themeChoice" GridPane.rowIndex="1" GridPane.columnIndex="1" />
-        
-        <Separator GridPane.rowIndex="2" GridPane.columnIndex="0" GridPane.columnSpan="2" />
-        <Label text="API Keys" GridPane.rowIndex="3" GridPane.columnIndex="0" />
-        <Label text="Google Vision API Key:" GridPane.rowIndex="4" GridPane.columnIndex="0" />
-        <TextField fx:id="googleVisionKeyField" promptText="AIza..." GridPane.rowIndex="4" GridPane.columnIndex="1" />
-        <Label text="OCR.space API Key:" GridPane.rowIndex="5" GridPane.columnIndex="0" />
-        <TextField fx:id="ocrSpaceKeyField" promptText="helloworld (demo)" GridPane.rowIndex="5" GridPane.columnIndex="1" />
-        
-    <!-- Mail settings removed -->
-    </GridPane>
-    <HBox spacing="10" alignment="CENTER_RIGHT" styleClass="footer-actions">
-        <Button text="Test Notification" onAction="#onSendTestNotification" styleClass="outline-btn" />
-        <Region HBox.hgrow="ALWAYS" />
-        <Button text="Cancel" onAction="#onCancel" styleClass="outline-btn" />
-        <Button text="Save" onAction="#onSave" styleClass="primary-btn" />
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="org.example.ui.SettingsController" prefWidth="520">
+    <VBox spacing="12">
+        <padding>
+            <Insets top="20" right="24" bottom="20" left="24"/>
+        </padding>
+
+        <Label text="General" styleClass="section-title"/>
+        <GridPane styleClass="form-grid" hgap="12" vgap="10">
+            <columnConstraints>
+                <ColumnConstraints minWidth="180"/>
+                <ColumnConstraints hgrow="ALWAYS"/>
+            </columnConstraints>
+            <Label text="Reminder window" styleClass="field-label" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+            <HBox spacing="8" alignment="CENTER_LEFT" GridPane.rowIndex="0" GridPane.columnIndex="1">
+                <Spinner fx:id="reminderSpinner" prefWidth="100"/>
+                <Label text="days before expiry" styleClass="hint"/>
+            </HBox>
+            <Label text="Theme" styleClass="field-label" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+            <ChoiceBox fx:id="themeChoice" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+        </GridPane>
+
+        <Label text="API keys (optional)" styleClass="section-title">
+            <VBox.margin>
+                <Insets top="8"/>
+            </VBox.margin>
+        </Label>
+        <Label styleClass="hint" wrapText="true"
+               text="Used to read receipts and find product photos. Keys are stored on this computer in data/config. Leave them blank to use the free fallbacks."/>
+        <GridPane styleClass="form-grid" hgap="12" vgap="10">
+            <columnConstraints>
+                <ColumnConstraints minWidth="180"/>
+                <ColumnConstraints hgrow="ALWAYS"/>
+            </columnConstraints>
+            <Label text="Google Vision key" styleClass="field-label" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+            <PasswordField fx:id="visionKeyField" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+            <Label text="OCR.space key" styleClass="field-label" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+            <PasswordField fx:id="ocrKeyField" promptText="Free demo key when blank" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+            <Label text="Google Custom Search key" styleClass="field-label" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+            <PasswordField fx:id="searchKeyField" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+            <Label text="Custom Search engine ID" styleClass="field-label" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+            <TextField fx:id="searchEngineField" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+        </GridPane>
+
+        <Label fx:id="errorLabel" styleClass="form-error" wrapText="true" visible="false" managed="false"/>
+    </VBox>
+
+    <HBox styleClass="dialog-footer" spacing="8" alignment="CENTER_LEFT">
+        <Button text="Send test notification" styleClass="btn-ghost" onAction="#onTestNotification"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Cancel" styleClass="btn-secondary" cancelButton="true" onAction="#onCancel"/>
+        <Button text="Save" styleClass="btn-primary" defaultButton="true" onAction="#onSave"/>
     </HBox>
 </VBox>

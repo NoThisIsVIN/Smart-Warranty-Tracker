@@ -1,86 +1,103 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.image.*?>
-<?import javafx.scene.layout.*?>
-<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="org.example.ui.DetailController" styleClass="card details-card" stylesheets="@/styles/details.css" prefWidth="900" prefHeight="480">
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.example.ui.DetailController" prefWidth="860" prefHeight="600">
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-padding: 8 12 8 12;">
-            <Label text="Warranty Details" styleClass="card-title" />
-            <Region HBox.hgrow="ALWAYS" />
-            <Label fx:id="lblStatus" styleClass="status-label" />
+        <HBox styleClass="dialog-header" alignment="CENTER_LEFT" spacing="10">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <HBox spacing="12" alignment="CENTER_LEFT">
+                    <Label fx:id="titleLabel" styleClass="page-title" wrapText="true"/>
+                    <Label fx:id="statusPill" styleClass="status-pill" minWidth="-Infinity"/>
+                </HBox>
+                <Label fx:id="subtitleLabel" styleClass="muted"/>
+            </VBox>
+            <Button text="Edit" styleClass="btn-secondary" onAction="#onEdit" minWidth="-Infinity"/>
+            <Button text="Delete" styleClass="btn-danger" onAction="#onDelete" minWidth="-Infinity"/>
         </HBox>
     </top>
+
     <center>
-        <HBox spacing="28" alignment="TOP_LEFT" style="-fx-padding: 16;" styleClass="details-content">
-            <!-- Left: textual details, progress, and recommendations -->
-            <VBox spacing="14" prefWidth="560" styleClass="details-grid">
-                <GridPane hgap="12" vgap="10">
-                    <columnConstraints>
-                        <ColumnConstraints percentWidth="28" />
-                        <ColumnConstraints percentWidth="72" />
-                    </columnConstraints>
+        <ScrollPane fitToWidth="true" styleClass="card-scroll">
+            <HBox spacing="20">
+                <padding>
+                    <Insets top="20" right="24" bottom="20" left="24"/>
+                </padding>
 
-                    <Label text="Product:" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="info-label" />
-                    <Label fx:id="lblProduct" GridPane.rowIndex="0" GridPane.columnIndex="1" />
-
-                    <Label text="Model:" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="info-label" />
-                    <Label fx:id="lblModel" GridPane.rowIndex="1" GridPane.columnIndex="1" />
-
-                    <Label text="Retailer:" GridPane.rowIndex="2" GridPane.columnIndex="0" styleClass="info-label" />
-                    <Label fx:id="lblRetailer" GridPane.rowIndex="2" GridPane.columnIndex="1" />
-
-                    <Label text="Purchased:" GridPane.rowIndex="3" GridPane.columnIndex="0" styleClass="info-label" />
-                    <Label fx:id="lblPurchase" GridPane.rowIndex="3" GridPane.columnIndex="1" />
-
-                    <Label text="Expires:" GridPane.rowIndex="4" GridPane.columnIndex="0" styleClass="info-label" />
-                    <Label fx:id="lblExpiry" GridPane.rowIndex="4" GridPane.columnIndex="1" />
-
-                    <Label text="Duration:" GridPane.rowIndex="5" GridPane.columnIndex="0" styleClass="info-label" />
-                    <Label fx:id="lblMonths" GridPane.rowIndex="5" GridPane.columnIndex="1" />
-                </GridPane>
-
-                <VBox spacing="8" style="-fx-padding: 6 0 0 0;" styleClass="progress-section">
-                    <Label text="Warranty Progress" styleClass="progress-title" />
-                    <HBox spacing="10" alignment="CENTER_LEFT">
-                        <ProgressBar fx:id="warrantyProgress" prefWidth="420" styleClass="progress-bar" />
-                        <Label fx:id="lblPercent" styleClass="progress-label" />
-                    </HBox>
-                </VBox>
-
-                <!-- Recommendations inside details -->
-                <VBox spacing="8" style="-fx-padding: 8 0 0 0;">
-                    <Label text="Recommendations" styleClass="card-title" />
-                    <HBox spacing="8" alignment="CENTER_LEFT">
-                        <Button text="Get for this warranty" onAction="#onGetRecommendations" styleClass="primary-btn" />
-                        <Label text="(opens official sites)" />
-                    </HBox>
-                    <ListView fx:id="recommendationsList" prefHeight="220" />
-                </VBox>
-
-                <HBox spacing="10" alignment="CENTER_LEFT" styleClass="footer-actions">
-                    <Region HBox.hgrow="ALWAYS" />
-                    <Button text="Delete Warranty" onAction="#onDelete" styleClass="delete-button" />
-                    <Button text="Close" onAction="#onClose" styleClass="close-button" />
-                </HBox>
-            </VBox>
-
-            <!-- Right: Product image + receipt thumbnail -->
-            <VBox spacing="14" alignment="TOP_CENTER" prefWidth="340">
-                <StackPane styleClass="image-frame" prefWidth="300" prefHeight="320">
-                    <ImageView fx:id="productImage" fitWidth="300" fitHeight="320" preserveRatio="true" pickOnBounds="true" />
-                </StackPane>
-                <Label text="Receipt" styleClass="file-title" />
-                <HBox spacing="8" alignment="CENTER_LEFT">
-                    <StackPane styleClass="file-image" prefWidth="120" prefHeight="80">
-                        <ImageView fx:id="receiptImage" fitWidth="120" fitHeight="80" preserveRatio="true" />
+                <VBox spacing="16" minWidth="320" maxWidth="320">
+                    <StackPane fx:id="imageWell" styleClass="image-well" onMouseClicked="#onImageClicked"
+                               minWidth="320" prefWidth="320" maxWidth="320"
+                               minHeight="240" prefHeight="240" maxHeight="240">
+                        <Label fx:id="imagePlaceholder" styleClass="card-media-placeholder"/>
+                        <ImageView fx:id="productImage" fitWidth="320" fitHeight="240" preserveRatio="true" smooth="true"/>
                     </StackPane>
-                    <VBox alignment="CENTER_LEFT" spacing="6">
-                        <Button text="Open Receipt" onAction="#onViewReceipt" styleClass="outline-btn" />
-                        <Button text="Attach / Replace" onAction="#onShowOrAttachReceipt" styleClass="outline-btn" />
+
+                    <VBox styleClass="surface" spacing="12">
+                        <Label text="Receipt" styleClass="section-title"/>
+                        <HBox spacing="14" alignment="CENTER_LEFT">
+                            <StackPane styleClass="receipt-thumb" minWidth="120" prefWidth="120" maxWidth="120"
+                                       minHeight="90" prefHeight="90" maxHeight="90">
+                                <Label fx:id="receiptPlaceholder" styleClass="muted"/>
+                                <ImageView fx:id="receiptImage" fitWidth="120" fitHeight="90" preserveRatio="true" smooth="true"/>
+                            </StackPane>
+                            <VBox spacing="8">
+                                <Button fx:id="openReceiptButton" text="Open" styleClass="btn-secondary"
+                                        onAction="#onOpenReceipt" maxWidth="Infinity"/>
+                                <Button fx:id="attachReceiptButton" text="Attach" styleClass="btn-secondary"
+                                        onAction="#onAttachReceipt" maxWidth="Infinity"/>
+                            </VBox>
+                        </HBox>
                     </VBox>
-                </HBox>
-            </VBox>
-        </HBox>
+                </VBox>
+
+                <VBox spacing="16" HBox.hgrow="ALWAYS">
+                    <VBox styleClass="surface" spacing="16">
+                        <GridPane hgap="16" vgap="10">
+                            <columnConstraints>
+                                <ColumnConstraints minWidth="100"/>
+                                <ColumnConstraints hgrow="ALWAYS"/>
+                            </columnConstraints>
+                            <Label text="Model" styleClass="field-label" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                            <Label fx:id="modelValue" styleClass="field-value" wrapText="true" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                            <Label text="Retailer" styleClass="field-label" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                            <Label fx:id="retailerValue" styleClass="field-value" wrapText="true" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                            <Label text="Purchased" styleClass="field-label" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                            <Label fx:id="purchasedValue" styleClass="field-value" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                            <Label text="Warranty" styleClass="field-label" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                            <Label fx:id="durationValue" styleClass="field-value" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                            <Label text="Expires" styleClass="field-label" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                            <Label fx:id="expiresValue" styleClass="field-value" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+                        </GridPane>
+                        <VBox spacing="6">
+                            <ProgressBar fx:id="progressBar" styleClass="progress-slim" maxWidth="Infinity"/>
+                            <Label fx:id="progressLabel" styleClass="muted"/>
+                        </VBox>
+                    </VBox>
+
+                    <VBox styleClass="surface" spacing="10">
+                        <Label text="Helpful links" styleClass="section-title"/>
+                        <VBox fx:id="linkList" styleClass="link-list"/>
+                    </VBox>
+                </VBox>
+            </HBox>
+        </ScrollPane>
     </center>
+
+    <bottom>
+        <HBox styleClass="dialog-footer" alignment="CENTER_RIGHT">
+            <Button text="Close" styleClass="btn-ghost" cancelButton="true" onAction="#onClose"/>
+        </HBox>
+    </bottom>
 </BorderPane>

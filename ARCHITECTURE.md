@@ -1,98 +1,43 @@
-## Smart Warranty Tracker - System Architecture
+# Architecture
 
-### Overview
-Smart Warranty Tracker is a desktop JavaFX application bootstrapped with a Spring Boot backend (non-web) for persistence, dependency injection, and scheduling. It stores data in an embedded H2 database (accessed over TCP) and renders a modern JavaFX UI. Optional integrations include lightweight recommendation links.
+## Runtime
+A single desktop process. `Launcher` → `MainApp` (JavaFX `Application`).
 
-### Key Technologies
-- JavaFX for UI (`main.fxml`, `detail.fxml`, `settings.fxml`)
-- Spring Boot for DI, lifecycle, and scheduling (non-web mode)
-- Spring Data JPA with H2
-- Java Preferences API for user settings (reminder days, theme)
+- `MainApp.init()` starts the Spring context (`SmartWarrantyTrackerApplication`, web type `none`, scheduling enabled).
+  If startup fails, for example because another instance holds the database lock, `start()` shows an error and exits.
+- `MainApp.start()` loads `main.fxml` through `ViewLoader`, applies the theme, and shows one summary toast for
+  warranties inside the reminder window.
+- The database is embedded H2 in file mode (`jdbc:h2:file:./data/smartwarranty`). No network port is opened.
 
-### Runtime Composition
-- Process: single desktop process launched via `org.example.Launcher` → `org.example.MainApp`.
-- Spring Context: started inside JavaFX app (`SmartWarrantyTrackerApplication`) with `@EnableScheduling`.
-- H2 Server: started as a TCP server during `MainApp.init()` to avoid local file locking.
-
-### High-Level Module Diagram (C4: Container/Components)
+## Layers
 ```
-[User]
-  |
-  v
-JavaFX UI (Views + Controllers)
-  - org.example.ui.MainController
-  - org.example.ui.DetailController
-  - org.example.ui.SettingsController
-  - ThemeManager
-       |
-       v (service calls)
-Spring Services
-  - WarrantyService
-  - SimpleRecommender
-       |
-       v (persistence)
-Repository (Spring Data JPA)
-  - WarrantyRepository
-       |
-       v
-H2 Database (TCP)  <-->  DataLoader (seeding)
-
-Schedulers
-  - WarrantyScheduler (daily reminder flagging)
-
-Optional REST (for future headless/remote use)
-  - WarrantyController (/api/warranties)
+ui (JavaFX)              MainController, WarrantyCard, WarrantyFormDialog, DetailView/DetailController,
+                         SettingsView/SettingsController, ViewLoader, ThemeManager, Notifier, Dialogs, Browser, Formats
+   │  calls
+service                  WarrantyService (CRUD + file lifecycle), FileStorage, ProductImageService (async), Http
+receipt                  ReceiptTextExtractor (PDFBox / POI / Vision / OCR.space), ReceiptParser (pure)
+recommender              SimpleRecommender → Recommendation(label, url)
+scheduler                WarrantyScheduler (daily 09:00)
+config                   AppSettings (Java Preferences), ApiKeys (data/config properties)
+   │
+repo / model             WarrantyRepository (Spring Data JPA) / Warranty, WarrantyStatus
 ```
 
-### Request/Data Flows
-- UI Listing/Actions:
-  1) `MainController` → `WarrantyService.listAllWithImageFetch()`
-  2) `WarrantyService` ensures `imageUrl` is populated (fetch/copy) and persists via `WarrantyRepository`.
-  3) UI renders list/cards; users can view, search, delete, and open details.
+## Key decisions
+- **Nothing slow runs on the FX thread.** Receipt reading uses a `javafx.concurrent.Task`. Product image lookup runs on
+  `ProductImageService`'s single background thread, at most once per warranty per session, and writes only the image
+  column (`updateImageUrl`) so it can't overwrite concurrent edits.
+- **Files are owned by warranties.** Receipts and images are copied into `data/receipts` and `data/images` only when a
+  warranty is saved, and deleted with it. `FileStorage.resolve` also finds files whose stored absolute path no longer
+  exists (for example after the project folder moved) by looking them up by name in `data/`.
+- **Controllers get constructor injection.** `ViewLoader` creates FXML controllers through Spring's
+  `AutowireCapableBeanFactory`, so they don't need to be singletons.
+- **Theming uses tokens.** `app.css` defines looked-up colours on `.root` plus every component style. `dark.css` only
+  redefines the tokens. `ThemeManager` restyles every open scene when the theme changes.
+- **Status is derived, not stored.** `Warranty.status(today, reminderDays)` gives ACTIVE / EXPIRING / EXPIRED, so the
+  reminder window from Settings is applied consistently everywhere.
 
-- Detail View:
-  - `DetailController.setWarranty(...)` computes expiry, days left, loads images, and allows delete.
-
-- Reminders:
-  - `MainController` periodically refreshes reminders list (<= 30 days).
-  - `WarrantyScheduler` runs daily at 09:00 to set `notified` and log reminders.
-  - `MainApp.start(...)` may show a Windows tray notification on startup when items are near-expiry.
-
-- Settings & Theme:
-  - `SettingsController` stores `reminder.days` and `theme` in Java Preferences and calls `ThemeManager.applyTheme`.
-  - `MainApp` applies base `app.css` and optional `dark.css` on startup.
-
-
-
-- Recommendations:
-  - `SimpleRecommender` builds Google search links based on local data; results rendered as hyperlinks in Recommendations pane.
-
-### Persistence and Configuration
-- Database: H2 TCP server started in `MainApp.init()`; Spring connects via `spring.datasource.url=jdbc:h2:tcp://localhost/./data/smartwarranty`.
-- JPA: `ddl-auto=update` for schema evolution; `Warranty` is the primary entity.
-- Seeding: `DataLoader` inserts sample data on first run.
-- Image/Receipt files: stored under `./data/images` and `./data/receipts`; UI loads via file URIs.
-- Image Fetch Config: `/image-fetch-config.properties` defines API key/endpoint/search engine ID used by `WarrantyService` to fetch an image when missing.
-
-### Notable Classes
-- `Launcher` → entry point delegating to JavaFX `MainApp`.
-- `MainApp` → boots Spring, starts H2 TCP, loads `main.fxml`, sets theme, and triggers tray notifications.
-- `SmartWarrantyTrackerApplication` → Spring Boot application with scheduling enabled.
-- `MainController` → dashboard, reminders, recommendations, add product, search.
-- `DetailController` → warranty detail modal, image viewing, receipt attach/view.
-- `SettingsController` → preferences (reminder days, theme), theme apply.
-- `WarrantyService` → CRUD, image default/fetch, queries.
-- `WarrantyRepository` → Spring Data JPA repository.
-- `WarrantyScheduler` → daily expiry checks.
-- `SimpleRecommender` → simple link-based recommendations.
-
-
-### Deployment/Packaging
-- Built as a Spring Boot jar with JavaFX resources; launched as a desktop app. The web-application-type is set to `none` to avoid starting an HTTP server for the UI flow. A REST controller exists for potential future integrations but is inactive in normal desktop use.
-
-### Quality and Extensibility Considerations
-- Separation of concerns: UI controllers delegate to services; persistence via repository.
-- Background tasks: JavaFX Timelines for periodic UI refresh; Spring `@Scheduled` for daily checks.
-- Theming: runtime theme toggling via `ThemeManager`.
-- Extensible points: reinstate email service, integrate external recommender, enable web mode to expose REST endpoints.
-
+## Data
+`Warranty` columns: id, productName, modelName, retailer, purchaseDate, warrantyMonths, notified, imageUrl,
+receiptImageUrl. The schema is managed by Hibernate `ddl-auto=update`. H2 is pinned to 2.2.224 to match the existing
+database file format.

@@ -1,222 +1,114 @@
 package org.example;
 
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import org.h2.tools.Server;
+import org.example.config.AppSettings;
+import org.example.model.Warranty;
+import org.example.ui.Browser;
+import org.example.ui.Dialogs;
+import org.example.ui.MainController;
+import org.example.ui.Notifier;
+import org.example.ui.ThemeManager;
+import org.example.ui.ViewLoader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.sql.SQLException;
-import java.util.prefs.Preferences;
-import java.util.stream.Collectors;
+import java.time.LocalDate;
+import java.util.List;
 
+/** JavaFX entry point: starts Spring in {@link #init()}, shows the main window, closes Spring on exit. */
 public class MainApp extends Application {
-    private ConfigurableApplicationContext springContext;
-    private Server h2Server;
-    private static TrayIcon trayIcon;
-    private Stage primaryStage;
+    private static final Logger log = LoggerFactory.getLogger(MainApp.class);
+
+    private ConfigurableApplicationContext context;
+    private RuntimeException startupError;
 
     @Override
     public void init() {
-
         try {
-            h2Server = Server.createTcpServer("-tcp", "-tcpAllowOthers", "-ifNotExists").start();
-            System.out.println("Started H2 TCP server on port " + h2Server.getPort());
-        } catch (SQLException e) {
-            System.err.println("Failed to start H2 TCP server: " + e.getMessage());
-
+            context = new SpringApplicationBuilder(SmartWarrantyTrackerApplication.class)
+                    .headless(false)
+                    .run(getParameters().getRaw().toArray(String[]::new));
+        } catch (RuntimeException e) {
+            log.error("Application context failed to start", e);
+            startupError = e;
         }
-
-        springContext = new SpringApplicationBuilder(SmartWarrantyTrackerApplication.class).run();
     }
 
     @Override
-    public void start(Stage stage) throws Exception {
-        this.primaryStage = stage;
-
-        setupSystemTray();
-        
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/main.fxml"));
-        loader.setControllerFactory(springContext::getBean);
-        Parent root = loader.load();
-        Scene scene = new Scene(root, 900, 600);
-
-        scene.getStylesheets().add(getClass().getResource("/styles/app.css").toExternalForm());
-
-        String theme = System.getProperty("app.theme");
-        if (theme == null || theme.isBlank()) {
-            java.util.prefs.Preferences prefs = java.util.prefs.Preferences.userNodeForPackage(org.example.ui.SettingsController.class);
-            theme = prefs.get("theme", "Light");
-        }
-        if ("Dark".equalsIgnoreCase(theme)) {
-            scene.getStylesheets().add(getClass().getResource("/styles/dark.css").toExternalForm());
+    public void start(Stage stage) {
+        Browser.setHostServices(getHostServices());
+        if (startupError != null) {
+            showStartupError();
+            Platform.exit();
+            return;
         }
 
-        org.example.ui.ThemeManager.setPrimaryScene(scene);
+        ThemeManager themeManager = context.getBean(ThemeManager.class);
+        Dialogs.setThemeManager(themeManager);
+        Notifier.setThemeManager(themeManager);
+
+        ViewLoader.View<MainController> view = context.getBean(ViewLoader.class).load("/fxml/main.fxml");
+        Scene scene = new Scene(view.root(), 1280, 800);
+        themeManager.apply(scene);
         stage.setScene(scene);
-        stage.setTitle("The Smart Warranty Tracker");
-
+        stage.setTitle("Warranty Tracker");
+        stage.setMinWidth(960);
+        stage.setMinHeight(640);
         stage.setMaximized(true);
         stage.show();
+        Notifier.setOwner(stage);
 
-        try {
-
-            Preferences prefs = Preferences.userNodeForPackage(org.example.ui.SettingsController.class);
-            int reminderDays = prefs.getInt("reminder.days", 30);
-
-            org.example.service.WarrantyService warrantyService = springContext.getBean(org.example.service.WarrantyService.class);
-            java.util.List<org.example.model.Warranty> all = warrantyService.listAll();
-
-            java.util.List<org.example.model.Warranty> soon = all.stream()
-                    .filter(w -> {
-                        long d = w.getDaysLeft();
-                        return d >= 0 && d <= reminderDays;
-                    })
-                    .collect(Collectors.toList());
-
-            System.out.println("[Notify] reminderDays=" + reminderDays + " candidates=" + soon.size());
-            for (org.example.model.Warranty w : soon) {
-                System.out.println("[Notify] -> " + w.getProductName() + " expiry=" + w.getExpiryDate() + " daysLeft=" + w.getDaysLeft());
-            }
-            boolean traySupported = false;
-            boolean headless = true;
-            try {
-                traySupported = SystemTray.isSupported();
-                headless = java.awt.GraphicsEnvironment.isHeadless();
-            } catch (Throwable t) {
-
-            }
-            System.out.println("[Notify] SystemTraySupported=" + traySupported + " Headless=" + headless);
-            if (!soon.isEmpty()) {
-
-                for (org.example.model.Warranty w : soon) {
-                    String title = "Warranty Reminder";
-                    String body = w.getProductName() + 
-                                  (w.getModelName() != null && !w.getModelName().isBlank() ? " " + w.getModelName() : "") +
-                                  " expires in " + w.getDaysLeft() + " days";
-
-                    sendScreenNotification(title, body, org.example.ui.WindowsNotifier.NotificationType.WARNING);
-
-                    try { Thread.sleep(200); } catch (InterruptedException ignored) {}
-                }
-            }
-        } catch (Throwable t) {
-
-            t.printStackTrace();
-        }
-    }
-
-    private void setupSystemTray() {
-        try {
-            if (!SystemTray.isSupported() || java.awt.GraphicsEnvironment.isHeadless()) {
-                System.out.println("System tray not supported on this platform");
-                return;
-            }
-
-            SystemTray tray = SystemTray.getSystemTray();
-
-            java.awt.Image image = null;
-            try (java.io.InputStream in = MainApp.class.getResourceAsStream("/images/placeholder.png")) {
-                if (in != null) {
-                    image = javax.imageio.ImageIO.read(in);
-                }
-            } catch (Exception ex) {
-
-                image = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
-                java.awt.Graphics2D g = ((BufferedImage) image).createGraphics();
-                g.setColor(new java.awt.Color(52, 152, 219));
-                g.fillRect(0, 0, 16, 16);
-                g.dispose();
-            }
-
-            PopupMenu popup = new PopupMenu();
-            
-            MenuItem openItem = new MenuItem("Open");
-            openItem.addActionListener(e -> javafx.application.Platform.runLater(() -> {
-                if (primaryStage != null) {
-                    primaryStage.show();
-                    primaryStage.toFront();
-                }
-            }));
-            
-            MenuItem exitItem = new MenuItem("Exit");
-            exitItem.addActionListener(e -> {
-                javafx.application.Platform.runLater(() -> {
-                    if (primaryStage != null) {
-                        primaryStage.close();
-                    }
-                });
-            });
-            
-            popup.add(openItem);
-            popup.addSeparator();
-            popup.add(exitItem);
-
-            trayIcon = new TrayIcon(image, "Smart Warranty Tracker", popup);
-            trayIcon.setImageAutoSize(true);
-
-            trayIcon.addActionListener(e -> javafx.application.Platform.runLater(() -> {
-                if (primaryStage != null) {
-                    primaryStage.show();
-                    primaryStage.toFront();
-                }
-            }));
-            
-            tray.add(trayIcon);
-            System.out.println("System tray icon added successfully");
-            
-        } catch (Exception e) {
-            System.err.println("Failed to setup system tray: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    public static void sendNotification(String title, String message, TrayIcon.MessageType messageType) {
-        if (trayIcon != null) {
-            try {
-                trayIcon.displayMessage(title, message, messageType);
-                System.out.println("Notification sent: " + title + " - " + message);
-            } catch (Exception e) {
-                System.err.println("Failed to send notification: " + e.getMessage());
-            }
-        }
-    }
-
-    public static void sendNotification(String title, String message) {
-        sendNotification(title, message, TrayIcon.MessageType.INFO);
-    }
-
-    public static void sendScreenNotification(String title, String message, org.example.ui.WindowsNotifier.NotificationType type) {
-        org.example.ui.WindowsNotifier.notify(title, message, type);
-    }
-
-    public static void sendScreenNotification(String title, String message) {
-        org.example.ui.WindowsNotifier.notify(title, message);
+        announceExpiring(view.controller().expiringSoon(), context.getBean(AppSettings.class).getReminderDays());
     }
 
     @Override
     public void stop() {
+        if (context != null) context.close();
+    }
 
-        if (trayIcon != null) {
-            try {
-                SystemTray.getSystemTray().remove(trayIcon);
-                System.out.println("System tray icon removed");
-            } catch (Exception e) {
-                System.err.println("Failed to remove tray icon: " + e.getMessage());
+    /** One summary toast for everything inside the reminder window. */
+    private static void announceExpiring(List<Warranty> soon, int reminderDays) {
+        if (soon.isEmpty()) return;
+        String body;
+        if (soon.size() == 1) {
+            Warranty w = soon.get(0);
+            long days = w.daysLeft(LocalDate.now());
+            String when = days == 0 ? "today" : days == 1 ? "tomorrow" : "in " + days + " days";
+            body = w.getDisplayName() + " expires " + when + ".";
+        } else {
+            body = soon.size() + " warranties expire within " + reminderDays + " days.";
+        }
+        Notifier.show("Expiring soon", body, Notifier.Type.WARNING);
+    }
+
+    private void showStartupError() {
+        // Spring isn't available, but the theme only needs the stored preference.
+        Dialogs.setThemeManager(new ThemeManager(new AppSettings()));
+        String message = isDatabaseLocked(startupError)
+                ? "Warranty Tracker is already running. Switch to the open window, or close it and try again."
+                : "Something went wrong while starting up: " + rootCause(startupError).getMessage()
+                        + "\n\nSee the log for details.";
+        Dialogs.error(null, "Warranty Tracker couldn't start", message);
+    }
+
+    private static boolean isDatabaseLocked(Throwable error) {
+        for (Throwable t = error; t != null; t = t.getCause()) {
+            String message = t.getMessage();
+            if (message != null && (message.contains("already in use") || message.contains("locked by another process"))) {
+                return true;
             }
         }
-        
-        if (springContext != null) {
-            springContext.close();
-        }
-        if (h2Server != null) {
-            h2Server.stop();
-            System.out.println("Stopped H2 TCP server");
-        }
+        return false;
+    }
+
+    private static Throwable rootCause(Throwable error) {
+        Throwable root = error;
+        while (root.getCause() != null && root.getCause() != root) root = root.getCause();
+        return root;
     }
 }

@@ -1,308 +1,591 @@
 /*
-  Modern UI theme (Light)
-  - Design tokens via looked-up colors on .root
-  - Softer cards, refined buttons, cleaner lists
-*/
+ * Smart Warranty Tracker - base theme (light).
+ * All colours are looked-up tokens on .root; dark.css only redefines them.
+ * JavaFX CSS: px units, no var(), no transitions. Author rules override modena.
+ */
 
-:root { -fx-font-family: 'Segoe UI', Tahoma, sans-serif; }
-
-/* Tokens - Modern Blue-Gray & Ocean Color Scheme */
+/* ---------- Tokens ---------- */
 .root {
-    /* palette */
-    -color-bg: linear-gradient(to bottom, #f8fafc, #f1f5f9);
-    -color-surface: #ffffff;
-    -color-elevated: #ffffff;
-    -color-border: #e2e8f0;
-    -color-text: #1e293b; /* slate-800 */
-    -color-muted: #64748b; /* slate-500 */
-    -brand: #0ea5e9;      /* sky-500 */
-    -brand-strong: #0284c7; /* sky-600 */
-    -brand-weak: #38bdf8; /* sky-400 */
-    -brand-light: #7dd3fc; /* sky-300 */
-    -accent: #06b6d4;     /* cyan-500 */
-    -accent-strong: #0891b2; /* cyan-600 */
-    -success: #10b981;    /* emerald-500 */
-    -warning: #f59e0b;    /* amber-500 */
-    -danger: #ef4444;     /* red-500 */
-    -shadow-color: rgba(14,165,233,0.12);
+    -c-bg: #f6f7f9;
+    -c-surface: #ffffff;
+    -c-surface-2: #f2f4f7;
+    -c-border: #e4e7ec;
+    -c-border-strong: #d0d5dd;
+    -c-text: #101828;
+    -c-text-muted: #667085;
+    -c-text-subtle: #98a2b3;
 
-    -fx-background-color: -color-bg;
-    -fx-text-base-color: -color-text;
-}
+    -c-accent: #4f46e5;
+    -c-accent-hover: #4338ca;
+    -c-accent-soft: #eef2ff;
+    -c-on-accent: #ffffff;
+    -c-focus: rgba(79, 70, 229, 0.25);
+    -c-selection: rgba(79, 70, 229, 0.18);
 
-/* Sidebar - Modern Ocean Blue Gradient */
-.sidebar {
-    -fx-padding: 20 16 20 16;
-    -fx-background-color: linear-gradient(to bottom, #0c4a6e, #0369a1, #0284c7);
-    -fx-pref-width: 200px;
-}
-.logo-main { -fx-text-fill: white; -fx-font-size: 20px; -fx-font-weight: 800; -fx-text-overrun: clip; }
-.logo-sub { -fx-text-fill: rgba(255,255,255,0.9); -fx-font-size: 12px; }
-.nav .nav-btn {
-    -fx-background-color: transparent;
-    -fx-text-fill: rgba(255,255,255,0.96);
+    -c-success: #079455;
+    -c-success-soft: #ecfdf3;
+    -c-warning: #dc6803;
+    -c-warning-soft: #fffaeb;
+    -c-danger: #d92d20;
+    -c-danger-hover: #b42318;
+    -c-danger-soft: #fef3f2;
+
+    -c-shadow: rgba(16, 24, 40, 0.06);
+    -c-shadow-strong: rgba(16, 24, 40, 0.08);
+
+    /* modena wiring so built-in controls and popups follow the tokens */
+    -fx-base: -c-surface;
+    -fx-background: -c-bg;
+    -fx-control-inner-background: -c-surface;
+    -fx-control-inner-background-alt: -c-surface;
+    -fx-accent: -c-accent;
+    -fx-default-button: -c-accent;
+    -fx-focus-color: -c-accent;
+    -fx-faint-focus-color: -c-focus;
+    -fx-text-base-color: -c-text;
+    -fx-text-background-color: -c-text;
+    -fx-text-inner-color: -c-text;
+    -fx-focused-text-base-color: -c-text;
+    -fx-focused-mark-color: -c-text;
+    -fx-selection-bar: -c-accent-soft;
+    -fx-selection-bar-non-focused: -c-surface-2;
+    -fx-selection-bar-text: -c-text;
+    -fx-box-border: -c-border;
+    -fx-text-box-border: -c-border-strong;
+    -fx-outer-border: -c-border-strong;
+    -fx-inner-border: transparent;
+    -fx-inner-border-horizontal: transparent;
+    -fx-inner-border-bottomup: transparent;
+    -fx-body-color: -c-surface;
+    -fx-body-color-bottomup: -c-surface;
+    -fx-body-color-to-right: -c-surface;
+    -fx-shadow-highlight-color: transparent;
+    -fx-hover-base: -c-surface-2;
+    -fx-pressed-base: -c-border;
+    -fx-mark-color: -c-text-muted;
+    -fx-mark-highlight-color: transparent;
+    -fx-mid-text-color: -c-text-muted;
+    -fx-dark-text-color: -c-text;
+
+    /* JavaFX picks one family; on non-Windows it falls back to the System font */
+    -fx-font-family: "Segoe UI";
     -fx-font-size: 13px;
-    -fx-font-weight: 700;
-    -fx-alignment: CENTER_LEFT;
-    -fx-padding: 12 16;
-    -fx-pref-width: 168px;
-    -fx-background-radius: 20;
-    -fx-cursor: hand;
+    -fx-background-color: -c-bg;
 }
-.nav .nav-btn:hover { -fx-background-color: rgba(255,255,255,0.10); }
-.nav .nav-btn:armed, .nav .nav-btn:pressed { -fx-background-color: rgba(255,255,255,0.14); }
-.nav .nav-btn.active { -fx-background-color: rgba(255,255,255,0.18); -fx-font-weight: 700; }
-.nav .nav-btn .text { -fx-fill: white; }
 
-/* Sidebar PRODUCTS list styled like nav */
-.sidebar .nav-list { 
-    -fx-background-color: transparent; 
-    -fx-border-color: transparent; 
-    -fx-padding: 0; 
-}
-.sidebar .nav-list:focused { -fx-faint-focus-color: transparent; -fx-focus-color: transparent; }
-.sidebar .nav-list .list-cell {
-    -fx-background-color: transparent;
-    -fx-text-fill: rgba(255,255,255,0.96);
-    -fx-padding: 8 12;
-    -fx-background-radius: 20;
-    -fx-cursor: hand;
-}
-.sidebar .nav-list .list-cell:hover { -fx-background-color: rgba(255,255,255,0.10); }
-.sidebar .nav-list .list-cell:selected { -fx-background-color: rgba(255,255,255,0.18); -fx-font-weight: 700; }
-.sidebar .nav-list .list-cell .text { -fx-fill: white; }
-.sidebar .nav-list .scroll-bar:horizontal { -fx-opacity: 0; -fx-pref-height: 0; }
-.sidebar .nav-list .scroll-bar:vertical { -fx-opacity: 0; -fx-pref-width: 0; }
-.sidebar .nav-list .corner { -fx-background-color: transparent; }
-
-/* Header */
-.header { -fx-padding: 14 18; -fx-background-color: transparent; -fx-border-color: transparent; }
-.header-title { -fx-font-size: 18px; -fx-font-weight: 700; -fx-text-fill: -color-text; }
-
-/* Center */
-.center-area { -fx-padding: 18; }
-.card {
-    -fx-background-color: -color-surface;
-    -fx-effect: dropshadow(gaussian, -shadow-color, 16, 0.24, 0, 6);
-    -fx-background-radius: 14;
-    -fx-padding: 16;
-    -fx-border-color: -color-border;
-    -fx-border-radius: 14;
-}
-.card-title { -fx-font-size: 18px; -fx-font-weight: 700; -fx-text-fill: -color-text; }
-
-/* Table */
-.table-view { -fx-background-color: transparent; -fx-table-cell-border-color: transparent; }
-.table-row-cell:filled:selected, .table-row-cell:focused:selected {
-    -fx-background-color: linear-gradient(to right, rgba(37,99,235,0.20), rgba(37,99,235,0.12));
-    -fx-background-insets: 0;
-}
-.table-row-cell:filled:selected .table-cell, .table-row-cell:focused:selected .table-cell { -fx-text-fill: #0b1220; }
-
-/* Row states (set by controller) */
-.table-row-cell.expired { -fx-background-color: rgba(239,68,68,0.06); }
-.table-row-cell.warning { -fx-background-color: rgba(245,158,11,0.06); }
-.table-row-cell.ok { -fx-background-color: rgba(34,197,94,0.05); }
-
-/* Buttons: Fully rounded modern style */
-.primary-btn,
+/* ---------- Buttons ---------- */
 .button {
-    -fx-background-color: linear-gradient(to bottom, -brand, -brand-strong);
-    -fx-text-fill: white;
-    -fx-font-weight: 700;
-    -fx-background-radius: 25;
-    -fx-padding: 10 18;
-    -fx-effect: dropshadow(gaussian, rgba(14,165,233,0.30), 14, 0.26, 0, 3);
+    -fx-background-color: -c-border-strong, -c-surface;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 8, 7;
+    -fx-text-fill: -c-text;
+    -fx-padding: 7 14;
     -fx-cursor: hand;
 }
-.primary-btn:hover, .button:hover { 
-    -fx-background-color: linear-gradient(to bottom, -brand-light, -brand-weak);
-    -fx-effect: dropshadow(gaussian, rgba(14,165,233,0.40), 16, 0.30, 0, 4);
+.button:hover { -fx-background-color: -c-border-strong, -c-surface-2; }
+.button:armed { -fx-background-color: -c-border-strong, -c-border; }
+.button:focus-visible {
+    -fx-background-color: -c-focus, -c-accent, -c-surface;
+    -fx-background-insets: -3, 0, 1;
+    -fx-background-radius: 11, 8, 7;
 }
-.button:armed { -fx-translate-y: 1; }
-.button:disabled { -fx-opacity: 0.5; -fx-effect: null; }
+.button:disabled { -fx-opacity: 0.5; -fx-cursor: default; }
 
-.outline-btn {
-    -fx-background-color: transparent;
-    -fx-border-color: -brand;
-    -fx-border-width: 2;
-    -fx-border-radius: 25;
-    -fx-text-fill: -brand;
+/* secondary == plain button, explicit for readability in FXML */
+.button.btn-secondary { -fx-font-weight: 600; }
+
+/* primary (also used for dialog default buttons) */
+.button.btn-primary, .button:default {
+    -fx-background-color: -c-accent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 8;
+    -fx-text-fill: -c-on-accent;
     -fx-font-weight: 600;
-    -fx-padding: 8 16;
-    -fx-background-radius: 25;
-    -fx-cursor: hand;
 }
-.outline-btn:hover {
-    -fx-background-color: rgba(14,165,233,0.08);
-    -fx-border-color: -brand;
-}
-.button.outline-btn { -fx-effect: null; }
-
-/* Accent Button - Teal Style */
-.accent-btn {
-    -fx-background-color: linear-gradient(to bottom, #06b6d4, #0891b2);
-    -fx-text-fill: white;
-    -fx-font-weight: 700;
-    -fx-background-radius: 25;
-    -fx-padding: 10 18;
-    -fx-effect: dropshadow(gaussian, rgba(6,182,212,0.30), 14, 0.26, 0, 3);
-    -fx-cursor: hand;
-}
-.accent-btn:hover {
-    -fx-background-color: linear-gradient(to bottom, #22d3ee, #06b6d4);
-    -fx-effect: dropshadow(gaussian, rgba(6,182,212,0.40), 16, 0.30, 0, 4);
-}
-.accent-btn:armed { -fx-translate-y: 1; }
-
-/* Delete Button - Danger Style */
-.delete-btn {
-    -fx-background-color: linear-gradient(to bottom, #f87171, #ef4444);
-    -fx-text-fill: white;
-    -fx-font-weight: 700;
-    -fx-background-radius: 25;
-    -fx-padding: 10 18;
-    -fx-effect: dropshadow(gaussian, rgba(239,68,68,0.30), 14, 0.26, 0, 3);
-    -fx-cursor: hand;
-}
-.delete-btn:hover {
-    -fx-background-color: linear-gradient(to bottom, #dc2626, #b91c1c);
-    -fx-effect: dropshadow(gaussian, rgba(239,68,68,0.40), 16, 0.30, 0, 4);
-}
-.delete-btn:armed { -fx-translate-y: 1; }
-
-/* Inputs - Rounded */
-.text-field {
-    -fx-background-radius: 20;
-    -fx-padding: 10 16;
-    -fx-background-color: white;
-    -fx-text-fill: -color-text;
-    -fx-prompt-text-fill: rgba(107,114,128,0.50);
-    -fx-border-color: -color-border;
-    -fx-border-width: 2;
-    -fx-border-radius: 20;
-}
-.text-field:focused { 
-    -fx-border-color: -brand-weak; 
-        -fx-effect: dropshadow(gaussian, rgba(14,165,233,0.25), 14, 0.28, 0, 2); 
+.button.btn-primary:hover, .button:default:hover { -fx-background-color: -c-accent-hover; }
+.button.btn-primary:armed, .button:default:armed { -fx-background-color: derive(-c-accent-hover, -8%); }
+.button.btn-primary:focus-visible, .button:default:focus-visible {
+    -fx-background-color: -c-focus, -c-accent;
+    -fx-background-insets: -3, 0;
+    -fx-background-radius: 11, 8;
 }
 
-/* Toolbar & search */
-.toolbar { -fx-padding: 8 0 0 0; }
-.search-bar { -fx-padding: 6 0; }
+/* danger */
+.button.btn-danger {
+    -fx-background-color: -c-danger;
+    -fx-background-insets: 0;
+    -fx-background-radius: 8;
+    -fx-text-fill: -c-on-accent;
+    -fx-font-weight: 600;
+}
+.button.btn-danger:hover { -fx-background-color: -c-danger-hover; }
+.button.btn-danger:armed { -fx-background-color: derive(-c-danger-hover, -8%); }
+.button.btn-danger:focus-visible {
+    -fx-background-color: -c-focus, -c-danger;
+    -fx-background-insets: -3, 0;
+    -fx-background-radius: 11, 8;
+}
 
-/* Card grid layout */
-.card-scroll {
+/* ghost, icon and nav buttons: transparent; focus uses a pre-reserved 1px border */
+.button.btn-ghost, .button.icon-btn, .button.nav-item {
     -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 8;
     -fx-border-color: transparent;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-text-fill: -c-text;
+}
+.button.btn-ghost:hover, .button.icon-btn:hover, .button.nav-item:hover { -fx-background-color: -c-surface-2; }
+.button.btn-ghost:armed, .button.icon-btn:armed, .button.nav-item:armed { -fx-background-color: -c-border; }
+.button.btn-ghost:focus-visible, .button.icon-btn:focus-visible, .button.nav-item:focus-visible {
+    -fx-background-color: transparent;
+    -fx-border-color: -c-accent;
+}
+.button.icon-btn {
+    -fx-text-fill: -c-text-muted;
+    -fx-padding: 6;
+    -fx-min-width: 32;
+    -fx-min-height: 32;
+    -fx-alignment: center;
+}
+.button.icon-btn:hover { -fx-text-fill: -c-text; }
+
+/* ---------- Shell: sidebar ---------- */
+.sidebar {
+    -fx-background-color: -c-surface;
+    -fx-border-color: transparent -c-border transparent transparent;
+    -fx-border-width: 0 1 0 0;
+    -fx-padding: 20 12 16 12;
+    -fx-spacing: 2;
+    -fx-pref-width: 224;
+}
+.wordmark { -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: -c-text; -fx-padding: 0 10; }
+.wordmark-sub { -fx-font-size: 12px; -fx-text-fill: -c-text-muted; -fx-padding: 0 10; }
+
+.button.nav-item {
+    -fx-text-fill: -c-text-muted;
+    -fx-alignment: center-left;
+    -fx-max-width: 10000;
+    -fx-padding: 7 10;
+    -fx-graphic-text-gap: 10;
+}
+.button.nav-item:hover { -fx-text-fill: -c-text; }
+.button.nav-item.active {
+    -fx-background-color: -c-accent-soft;
+    -fx-text-fill: -c-accent;
+    -fx-font-weight: 600;
+}
+.nav-badge {
+    -fx-background-color: -c-surface-2;
+    -fx-background-radius: 999;
+    -fx-text-fill: -c-text-muted;
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+    -fx-padding: 1 7;
+}
+.nav-item.active .nav-badge { -fx-background-color: -c-surface; -fx-text-fill: -c-accent; }
+
+.sidebar-footer {
+    -fx-border-color: -c-border transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 12 0 0 0;
+    -fx-spacing: 2;
+}
+
+/* ---------- Shell: content ---------- */
+.content { -fx-background-color: -c-bg; -fx-padding: 24 28; -fx-spacing: 20; }
+.page-header { -fx-spacing: 12; -fx-alignment: center-left; }
+.page-title { -fx-font-size: 20px; -fx-font-weight: 600; -fx-text-fill: -c-text; }
+.page-subtitle { -fx-font-size: 13px; -fx-text-fill: -c-text-muted; }
+.toolbar { -fx-spacing: 8; -fx-alignment: center-left; }
+.text-field.search-field { -fx-pref-width: 280; -fx-padding: 7 12; }
+
+/* ---------- Segmented filter ---------- */
+.segmented {
+    -fx-background-color: -c-surface-2;
+    -fx-background-radius: 8;
+    -fx-padding: 3;
+    -fx-spacing: 2;
+    -fx-alignment: center-left;
+}
+.toggle-button.segment {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 6;
+    -fx-border-color: transparent;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+    -fx-text-fill: -c-text-muted;
+    -fx-padding: 4 12;
+    -fx-cursor: hand;
+}
+.toggle-button.segment:hover { -fx-text-fill: -c-text; }
+.toggle-button.segment:selected {
+    -fx-background-color: -c-surface;
+    -fx-text-fill: -c-text;
+    -fx-font-weight: 600;
+    -fx-effect: dropshadow(gaussian, -c-shadow-strong, 4, 0, 0, 1);
+}
+.toggle-button.segment:focus-visible { -fx-border-color: -c-accent; }
+
+/* ---------- Stats ---------- */
+.stat-row { -fx-spacing: 12; }
+.stat-tile {
+    -fx-background-color: -c-border, -c-surface;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 12, 11;
+    -fx-padding: 14 16;
+    -fx-spacing: 6;
+    -fx-cursor: hand;
+}
+.stat-tile:hover { -fx-background-color: -c-border-strong, -c-surface; }
+.stat-tile.selected { -fx-background-color: -c-accent, -c-surface; }
+.stat-value { -fx-font-size: 22px; -fx-font-weight: 600; -fx-text-fill: -c-text; }
+.stat-label { -fx-font-size: 12px; -fx-text-fill: -c-text-muted; }
+.stat-dot {
+    -fx-min-width: 8; -fx-pref-width: 8; -fx-max-width: 8;
+    -fx-min-height: 8; -fx-pref-height: 8; -fx-max-height: 8;
+    -fx-background-radius: 999;
+    -fx-background-color: -c-text-subtle;
+}
+.stat-dot.dot-active { -fx-background-color: -c-success; }
+.stat-dot.dot-expiring { -fx-background-color: -c-warning; }
+.stat-dot.dot-expired { -fx-background-color: -c-danger; }
+.stat-dot.dot-total { -fx-background-color: -c-accent; }
+
+/* ---------- Cards ---------- */
+.card-scroll, .card-scroll:focused, .card-scroll > .viewport {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
     -fx-padding: 0;
 }
-.card-scroll .viewport {
-    -fx-background-color: transparent;
+.card-grid { -fx-hgap: 16; -fx-vgap: 16; -fx-padding: 4 4 16 4; }
+
+.warranty-card {
+    -fx-background-color: -c-border, -c-surface;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 12, 11;
+    -fx-effect: dropshadow(gaussian, -c-shadow, 12, 0, 0, 2);
+    -fx-cursor: hand;
 }
-.card-grid {
-    -fx-background-color: transparent;
+.warranty-card:hover { -fx-background-color: -c-border-strong, -c-surface; }
+.warranty-card:focused {
+    -fx-background-color: -c-focus, -c-accent, -c-surface;
+    -fx-background-insets: -3, 0, 1;
+    -fx-background-radius: 15, 12, 11;
+}
+.card-media {
+    -fx-background-color: -c-surface-2;
+    -fx-background-insets: 1 1 0 1;
+    -fx-background-radius: 11 11 0 0;
+}
+.card-media-placeholder { -fx-font-size: 28px; -fx-font-weight: 600; -fx-text-fill: -c-text-subtle; }
+.card-body { -fx-padding: 12 14 14 14; -fx-spacing: 6; }
+.card-title { -fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: -c-text; }
+.card-subtitle { -fx-font-size: 12px; -fx-text-fill: -c-text-muted; }
+.card-meta { -fx-font-size: 12px; -fx-text-fill: -c-text-muted; }
+.card-footer { -fx-font-size: 12px; -fx-text-fill: -c-text-muted; -fx-spacing: 8; -fx-alignment: center-left; }
+.card-footer > .label { -fx-text-fill: -c-text-muted; }
+
+/* ---------- Status pills & slim progress ---------- */
+.status-pill {
+    -fx-background-color: -c-surface-2;
+    -fx-background-radius: 999;
+    -fx-text-fill: -c-text-muted;
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+    -fx-padding: 2 8;
+}
+.status-pill.status-active { -fx-background-color: -c-success-soft; -fx-text-fill: -c-success; }
+.status-pill.status-expiring { -fx-background-color: -c-warning-soft; -fx-text-fill: -c-warning; }
+.status-pill.status-expired { -fx-background-color: -c-danger-soft; -fx-text-fill: -c-danger; }
+
+.progress-bar { -fx-padding: 0; -fx-indeterminate-bar-length: 60; }
+.progress-bar > .track {
+    -fx-background-color: -c-surface-2;
+    -fx-background-insets: 0;
+    -fx-background-radius: 999;
+}
+.progress-bar > .bar {
+    -fx-background-color: -c-accent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 999;
+    -fx-padding: 4;
+}
+.progress-slim > .track { -fx-background-color: -c-border; }
+.progress-slim > .bar { -fx-padding: 3; }
+.progress-slim.status-active > .bar { -fx-background-color: -c-success; }
+.progress-slim.status-expiring > .bar { -fx-background-color: -c-warning; }
+.progress-slim.status-expired > .bar { -fx-background-color: -c-danger; }
+
+/* ---------- Empty state ---------- */
+.empty-state { -fx-alignment: center; -fx-spacing: 8; -fx-padding: 48 24; }
+.empty-title { -fx-font-size: 16px; -fx-font-weight: 600; -fx-text-fill: -c-text; }
+.empty-text { -fx-text-fill: -c-text-muted; -fx-text-alignment: center; -fx-wrap-text: true; }
+
+/* ---------- Generic building blocks ---------- */
+.surface {
+    -fx-background-color: -c-border, -c-surface;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 12, 11;
+    -fx-padding: 16;
+}
+.section-title { -fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: -c-text-muted; }
+.muted, .label.muted { -fx-text-fill: -c-text-muted; }
+.field-label { -fx-font-size: 12px; -fx-text-fill: -c-text-muted; }
+.field-value { -fx-font-size: 13px; -fx-text-fill: -c-text; }
+.form-grid { -fx-hgap: 12; -fx-vgap: 10; }
+.form-error { -fx-font-size: 12px; -fx-text-fill: -c-danger; }
+.hint { -fx-font-size: 12px; -fx-text-fill: -c-text-subtle; }
+
+.image-well {
+    -fx-background-color: -c-border, -c-surface-2;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 10, 9;
     -fx-padding: 8;
 }
-
-/* Individual warranty card - Modern Blue-Gray Theme */
-.warranty-card {
-    -fx-background-color: linear-gradient(to bottom, #ffffff, #f8fafc);
-    -fx-background-radius: 20;
-    -fx-border-radius: 20;
-    -fx-border-color: -color-border;
-    -fx-border-width: 2;
-    -fx-padding: 20;
-    -fx-effect: dropshadow(gaussian, rgba(14,165,233,0.15), 18, 0.30, 0, 4);
-    -fx-pref-width: 440;
-    -fx-pref-height: 320;
-}
-.warranty-card:hover {
-    -fx-border-color: -brand-weak;
-    -fx-effect: dropshadow(gaussian, rgba(14,165,233,0.30), 20, 0.35, 0, 6);
+.receipt-thumb {
+    -fx-background-color: -c-border, -c-surface-2;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 8, 7;
+    -fx-padding: 4;
     -fx-cursor: hand;
-    -fx-scale-x: 1.02;
-    -fx-scale-y: 1.02;
 }
-.warranty-card .card-title {
-    -fx-font-size: 20px;
-    -fx-font-weight: 700;
-    -fx-text-fill: -color-text;
+.receipt-thumb:hover { -fx-background-color: -c-border-strong, -c-surface-2; }
+
+.dialog-header {
+    -fx-background-color: -c-surface;
+    -fx-border-color: transparent transparent -c-border transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 18 24 14 24;
+    -fx-spacing: 4;
 }
-.warranty-card Label {
-    -fx-text-fill: -color-muted;
-    -fx-font-size: 15px;
+.dialog-footer {
+    -fx-background-color: -c-surface;
+    -fx-border-color: -c-border transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 12 24;
+    -fx-spacing: 8;
+    -fx-alignment: center-right;
 }
 
-/* Muted helper text */
-.muted-label { -fx-text-fill: -color-muted; -fx-font-size: 12px; }
-
-/* Status badges for cards */
-.status-badge { -fx-padding: 4 10; -fx-background-radius: 999; -fx-font-weight: 700; -fx-font-size: 12px; }
-.status-badge.active { -fx-background-color: rgba(16,185,129,0.18); -fx-text-fill: #065f46; }
-.status-badge.expired { -fx-background-color: rgba(239,68,68,0.20); -fx-text-fill: #7f1d1d; }
-
-/* Progress bar variants */
-.expired-progress { -fx-accent: -danger; }
-
-/* ListView as cards (legacy support) */
-.list-view.cards-list { -fx-background-color: transparent; -fx-padding: 6 0; }
-.list-view.cards-list .list-cell { -fx-background-color: transparent; -fx-padding: 6 0; }
-.list-view.cards-list .list-cell .text { -fx-fill: -color-text; }
-.list-view.cards-list .list-cell:filled .cell-container,
-.cards-cell {
-    -fx-background-color: -color-surface;
-    -fx-background-radius: 14;
-    -fx-border-radius: 14;
-    -fx-border-color: -color-border;
-    -fx-padding: 12;
-    -fx-effect: dropshadow(gaussian, rgba(16,24,40,0.10), 14, 0.24, 0, 4);
+/* ---------- Links ---------- */
+.hyperlink, .hyperlink:visited {
+    -fx-text-fill: -c-accent;
+    -fx-underline: false;
+    -fx-border-color: transparent;
+    -fx-border-style: solid;
+    -fx-border-radius: 4;
+    -fx-padding: 2 4;
 }
-.list-view.cards-list .list-cell:filled:selected .cell-container {
-    -fx-border-color: -brand-weak;
-    -fx-effect: dropshadow(gaussian, rgba(59,130,246,0.20), 16, 0.28, 0, 4);
+.hyperlink:hover { -fx-underline: true; }
+.hyperlink:focused { -fx-border-color: transparent; }
+.hyperlink:focus-visible { -fx-border-color: -c-accent; }
+.link-list { -fx-spacing: 2; }
+.link-list .hyperlink { -fx-padding: 3 4; }
+
+/* ---------- Text inputs ---------- */
+.text-input {
+    -fx-background-color: -c-border-strong, -c-surface;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 8, 7;
+    -fx-text-fill: -c-text;
+    -fx-prompt-text-fill: -c-text-subtle;
+    -fx-highlight-fill: -c-selection;
+    -fx-highlight-text-fill: -c-text;
+    -fx-padding: 7 10;
 }
-.list-view .list-cell:filled:selected { -fx-background-color: linear-gradient(to right, rgba(59,130,246,0.12), rgba(59,130,246,0.08)); -fx-background-insets: 0; }
-.list-view .list-cell:filled:selected .text { -fx-fill: #0f172a; }
-.list-view.cards-list .list-cell:filled:hover { -fx-background-color: rgba(2,6,23,0.03); -fx-background-radius: 12; }
-
-/* Scrollbars */
-.scroll-bar:vertical .thumb, .scroll-bar:horizontal .thumb { -fx-background-color: #cbd5e1; -fx-background-radius: 6; }
-.scroll-bar .track { -fx-background-color: transparent; }
-
-/* Detail view common */
-.image-frame {
-    -fx-background-color: #f8fafc;
-    -fx-border-color: #e2e8f0;
-    -fx-border-width: 1;
-    -fx-border-radius: 10;
-    -fx-background-radius: 10;
-    -fx-padding: 6;
+.text-input:hover { -fx-background-color: -c-text-subtle, -c-surface; }
+.text-input:focused {
+    -fx-background-color: -c-focus, -c-accent, -c-surface;
+    -fx-background-insets: -3, 0, 1;
+    -fx-background-radius: 11, 8, 7;
 }
-.info-grid { -fx-padding: 12; }
-.info-label { -fx-font-size: 14px; -fx-font-weight: 500; -fx-text-fill: -color-muted; }
-.progress-title { -fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: -brand; }
-.progress-bar { -fx-accent: -brand; -fx-background-color: #e0e0e0; -fx-background-radius: 6; }
-.progress-label { -fx-font-size: 12px; -fx-text-fill: -color-muted; }
-.close-button { -fx-background-color: -danger; -fx-text-fill: white; -fx-font-weight: 600; -fx-background-radius: 8; -fx-padding: 8 14; }
+.text-input:disabled { -fx-opacity: 0.6; }
+.text-area { -fx-padding: 1; }
+.text-area .content { -fx-background-color: -c-surface; -fx-background-radius: 7; -fx-padding: 6 9; }
+.text-area .scroll-pane, .text-area .scroll-pane > .viewport { -fx-background-color: transparent; }
 
-/* Details */
-.details-grid { -fx-padding: 20; }
-.status-label { -fx-font-size: 13px; -fx-font-weight: 700; -fx-text-fill: #137333; -fx-background-color: #e6f4ea; -fx-padding: 6 10; -fx-background-radius: 999; }
-.status-section { -fx-padding: 16; -fx-background-color: #f9fafb; -fx-border-color: #e5e7eb; -fx-border-radius: 10; -fx-background-radius: 10; }
-.files-section { -fx-padding: 16; }
-.file-title { -fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #37474f; }
-.file-image { -fx-border-color: #e5e7eb; -fx-border-width: 1; -fx-border-radius: 10; -fx-padding: 6; -fx-background-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.08), 8, 0, 0, 4); }
-.assistant-section { -fx-padding: 16; -fx-background-color: #f1f5f9; -fx-border-color: #e2e8f0; -fx-border-radius: 10; -fx-background-radius: 10; }
-.assistant-title { -fx-font-size: 16px; -fx-font-weight: 700; -fx-text-fill: -brand; }
-.assistant-description { -fx-font-size: 14px; -fx-text-fill: -color-muted; }
-.delete-button { -fx-background-color: #e53935; -fx-text-fill: white; -fx-font-weight: 700; -fx-background-radius: 8; -fx-padding: 8 14; }
+/* ---------- ComboBox / ChoiceBox / DatePicker / Spinner ---------- */
+.combo-box-base, .choice-box, .spinner {
+    -fx-background-color: -c-border-strong, -c-surface;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 8, 7;
+}
+.combo-box-base:hover, .choice-box:hover, .spinner:hover { -fx-background-color: -c-text-subtle, -c-surface; }
+.combo-box-base:focused, .combo-box-base:focus-within, .choice-box:focused, .spinner:focus-within {
+    -fx-background-color: -c-focus, -c-accent, -c-surface;
+    -fx-background-insets: -3, 0, 1;
+    -fx-background-radius: 11, 8, 7;
+}
+.combo-box-base > .text-field, .combo-box-base > .text-field:focused,
+.spinner > .text-field, .spinner > .text-field:focused {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+}
+.combo-box-base > .arrow-button, .choice-box > .open-button { -fx-background-color: transparent; }
+.combo-box > .list-cell, .combo-box > .list-cell:filled:hover, .combo-box > .list-cell:filled:selected {
+    -fx-background-color: transparent;
+    -fx-text-fill: -c-text;
+    -fx-padding: 6 10;
+}
+.spinner > .increment-arrow-button, .spinner > .decrement-arrow-button {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 6;
+}
+.spinner > .increment-arrow-button:hover, .spinner > .decrement-arrow-button:hover { -fx-background-color: -c-surface-2; }
 
-/* Chips & badges */
-.details-grid Label { -fx-font-size: 13px; -fx-text-fill: #556; }
-.details-grid .info-label { -fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #1f2937; }
-.badge-active { -fx-background-color: linear-gradient(#e6f4ea, #d1f0da); -fx-text-fill: #046c3f; }
-.badge-expired { -fx-background-color: linear-gradient(#ffe9e9, #ffd6d6); -fx-text-fill: #7b1f1f; }
-.detail-row { -fx-padding: 10 0; -fx-border-width: 0 0 1 0; -fx-border-style: solid; -fx-border-color: #edf2f7; }
-.chip { -fx-background-color: #eef2ff; -fx-text-fill: #1e40af; -fx-padding: 6 10; -fx-background-radius: 999; -fx-font-weight: 600; }
-.footer-actions { -fx-padding: 12 0 0 0; }
+/* ---------- Popups: combo list, context menu, date picker, tooltip ---------- */
+.combo-box-popup > .list-view, .context-menu {
+    -fx-background-color: -c-border, -c-surface;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 8, 7;
+    -fx-padding: 4;
+    -fx-effect: dropshadow(gaussian, -c-shadow-strong, 16, 0, 0, 4);
+}
+.menu-item { -fx-padding: 6 12; -fx-background-radius: 6; }
+.menu-item:focused { -fx-background-color: -c-surface-2; }
+.menu-item:focused > .label, .menu-item > .label { -fx-text-fill: -c-text; }
+.menu-item:disabled > .label { -fx-text-fill: -c-text-subtle; }
+.context-menu > .separator { -fx-padding: 4 0; }
+
+.date-picker-popup {
+    -fx-background-color: -c-border, -c-surface;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 10, 9;
+    -fx-padding: 4;
+    -fx-effect: dropshadow(gaussian, -c-shadow-strong, 16, 0, 0, 4);
+}
+.date-picker-popup > .month-year-pane {
+    -fx-background-color: transparent;
+    -fx-padding: 8 6;
+}
+.date-picker-popup > * > .spinner,
+.date-picker-popup > * > .spinner:hover,
+.date-picker-popup > * > .spinner:focus-within {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+}
+.date-picker-popup > * > .spinner > .button {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 6;
+    -fx-padding: 6 8;
+}
+.date-picker-popup > * > .spinner > .button:hover { -fx-background-color: -c-surface-2; }
+.date-picker-popup > * > .spinner > .label { -fx-font-weight: 600; }
+.date-picker-popup .day-name-cell, .date-picker-popup .week-number-cell {
+    -fx-text-fill: -c-text-muted;
+    -fx-font-size: 11px;
+}
+.date-picker-popup .date-cell { -fx-background-color: transparent; -fx-background-radius: 6; -fx-text-fill: -c-text; }
+.date-picker-popup .date-cell.previous-month, .date-picker-popup .date-cell.next-month { -fx-text-fill: -c-text-subtle; }
+.date-picker-popup .date-cell:hover, .date-picker-popup .date-cell:focused { -fx-background-color: -c-surface-2; }
+.date-picker-popup .date-cell.today { -fx-background-color: -c-accent-soft; -fx-text-fill: -c-accent; -fx-font-weight: 600; }
+.date-picker-popup .date-cell.selected { -fx-background-color: -c-accent; -fx-text-fill: -c-on-accent; }
+
+.tooltip {
+    -fx-background-color: -c-text;
+    -fx-background-radius: 6;
+    -fx-text-fill: -c-bg;
+    -fx-font-size: 12px;
+    -fx-padding: 5 9;
+    -fx-effect: dropshadow(gaussian, -c-shadow-strong, 8, 0, 0, 2);
+}
+
+/* ---------- ListView ---------- */
+.list-view {
+    -fx-background-color: -c-border, -c-surface;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 8, 7;
+    -fx-padding: 4;
+}
+.list-cell { -fx-background-color: transparent; -fx-background-radius: 6; -fx-padding: 6 10; -fx-text-fill: -c-text; }
+.list-cell:filled:hover { -fx-background-color: -c-surface-2; }
+.list-cell:filled:selected { -fx-background-color: -c-accent-soft; -fx-text-fill: -c-text; }
+
+/* ---------- CheckBox / RadioButton ---------- */
+.check-box > .box, .radio-button > .radio {
+    -fx-background-color: -c-border-strong, -c-surface;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 5, 4;
+}
+.radio-button > .radio { -fx-background-radius: 999, 999; }
+.check-box:selected > .box, .radio-button:selected > .radio { -fx-background-color: -c-accent, -c-accent; }
+.check-box:selected > .box > .mark, .radio-button:selected > .radio > .dot { -fx-background-color: -c-on-accent; }
+.check-box:focus-visible > .box, .radio-button:focus-visible > .radio {
+    -fx-background-color: -c-focus, -c-accent, -c-surface;
+    -fx-background-insets: -3, 0, 1;
+}
+.check-box:selected:focus-visible > .box, .radio-button:selected:focus-visible > .radio {
+    -fx-background-color: -c-focus, -c-accent, -c-accent;
+}
+
+/* ---------- ScrollBars ---------- */
+.scroll-bar, .scroll-bar:vertical, .scroll-bar:horizontal {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 2;
+}
+.scroll-bar > .thumb {
+    -fx-background-color: -c-border-strong;
+    -fx-background-insets: 0;
+    -fx-background-radius: 999;
+}
+.scroll-bar > .thumb:hover, .scroll-bar > .thumb:pressed { -fx-background-color: -c-text-subtle; }
+.scroll-bar > .track, .scroll-bar > .track-background { -fx-background-color: transparent; }
+.scroll-bar > .increment-button, .scroll-bar > .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+.scroll-bar:vertical > .increment-button > .increment-arrow,
+.scroll-bar:vertical > .decrement-button > .decrement-arrow {
+    -fx-background-color: transparent;
+    -fx-padding: 0 3;
+}
+.scroll-bar:horizontal > .increment-button > .increment-arrow,
+.scroll-bar:horizontal > .decrement-button > .decrement-arrow {
+    -fx-background-color: transparent;
+    -fx-padding: 3 0;
+}
+.scroll-pane > .corner { -fx-background-color: transparent; }
+
+/* ---------- Separator ---------- */
+.separator:horizontal .line { -fx-border-color: -c-border transparent transparent transparent; -fx-border-insets: 0; }
+.separator:vertical .line { -fx-border-color: transparent transparent transparent -c-border; -fx-border-insets: 0; }
+
+/* ---------- Dialog panes (Alert / Dialog) ---------- */
+.dialog-pane { -fx-background-color: -c-surface; -fx-padding: 0; }
+.dialog-pane:header .header-panel {
+    -fx-background-color: -c-border, -c-surface;
+    -fx-background-insets: 0, 0 0 1 0;
+    -fx-padding: 16 20;
+}
+.dialog-pane:header .header-panel .label { -fx-font-size: 15px; -fx-font-weight: 600; -fx-text-fill: -c-text; }
+.dialog-pane > .content { -fx-padding: 16 20; }
+.dialog-pane > .content.label { -fx-text-fill: -c-text-muted; -fx-wrap-text: true; }
+.dialog-pane > .button-bar > .container { -fx-padding: 4 20 16 20; }
+
+/* ---------- Toasts ---------- */
+.toast {
+    -fx-background-color: -c-border, -c-surface;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 10, 9;
+    -fx-padding: 12 14 12 12;
+    -fx-spacing: 12;
+    -fx-effect: dropshadow(gaussian, -c-shadow-strong, 18, 0, 0, 4);
+}
+.toast-accent {
+    -fx-min-width: 4; -fx-pref-width: 4; -fx-max-width: 4;
+    -fx-background-radius: 999;
+    -fx-background-color: -c-accent;
+}
+.toast-info .toast-accent { -fx-background-color: -c-accent; }
+.toast-success .toast-accent { -fx-background-color: -c-success; }
+.toast-warning .toast-accent { -fx-background-color: -c-warning; }
+.toast-error .toast-accent { -fx-background-color: -c-danger; }
+.toast-title { -fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: -c-text; }
+.toast-body { -fx-font-size: 12px; -fx-text-fill: -c-text-muted; -fx-wrap-text: true; }
