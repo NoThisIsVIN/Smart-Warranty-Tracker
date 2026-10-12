@@ -1,54 +1,59 @@
 # Smart Warranty Tracker
 
-A Java desktop application to manage product warranties. Built with Spring Boot (backend), JavaFX (frontend), and H2 for local storage. This application demonstrates automated expiry calculation, scheduled reminders, and a simple recommender system.
+A desktop app for keeping track of product warranties: what you bought, when it expires, and where the receipt is.
+Built with JavaFX for the UI and Spring Boot (non-web) for dependency injection, persistence and scheduling.
+Data lives in an embedded H2 database under `data/`.
 
-## Project Structure
+## Features
+- **Dashboard**: cards for every warranty, with live search, status filters (Active / Expiring / Expired), sorting and summary tiles.
+- **Add and edit**: a single form with a date picker and validation. Optionally attach a receipt (image, PDF or DOCX) and the
+  app reads it in the background to pre-fill the product, model, retailer, purchase date and warranty length.
+- **Details**: progress through the warranty period, the receipt (open or replace it), and helpful support and extended-warranty links.
+- **Reminders**: a toast at startup and a daily 09:00 check for warranties expiring within your reminder window (set in Settings).
+- **Product images**: fetched in the background for warranties that don't have one (Google Custom Search if configured,
+  otherwise DuckDuckGo and Wikipedia).
+- **Light and dark themes.**
 
+## Requirements
+- JDK 21 or newer
+- Maven 3.9+
+
+## Run
+```bash
+mvn javafx:run
 ```
-swt/
-├── data/                    # Local storage (images, receipts, configurations)
-├── src/
-│   └── main/
-│       ├── java/org/example/
-│       │   ├── controller/  # REST Controllers for external data access
-│       │   ├── dev/         # Developer tools and query scripts
-│       │   ├── model/       # Data entities (e.g., Warranty)
-│       │   ├── recommender/ # Recommendation logic
-│       │   ├── repo/        # Database repositories (Spring Data JPA)
-│       │   ├── scheduler/   # Scheduled tasks (e.g., Expiry notifications)
-│       │   ├── service/     # Business logic and external integrations
-│       │   └── ui/          # JavaFX controllers and UI logic
-│       └── resources/       # Application configuration, FXML views, and CSS
-├── ARCHITECTURE.md          # Detailed system architecture
-└── pom.xml                  # Maven configuration
+
+## Test
+```bash
+mvn test
 ```
 
+## Optional API keys
+Open **Settings → API keys**. Keys are stored locally in `data/config/image-fetch-config.properties`, which git ignores.
 
-## Getting Started (Windows PowerShell)
+| Key | Used for |
+| --- | --- |
+| Google Vision | OCR of receipt images (best quality) |
+| OCR.space | OCR fallback. Without a key, OCR.space's public demo key is used, which is rate-limited. |
+| Google Custom Search key + engine ID | Product image lookup |
 
-Requirements: Java 17+ and Maven 3+
+Receipt images are sent to these OCR services only when you attach one. PDF and DOCX receipts are read locally.
 
-1. **Build the Application:**
-   ```powershell
-   mvn clean package
-   ```
+## Project layout
+```
+src/main/java/org/example/
+  config/       user preferences (AppSettings) and API keys (ApiKeys)
+  model/        Warranty entity and WarrantyStatus
+  repo/         Spring Data repository
+  service/      warranty CRUD, file storage, product image lookup, shared HTTP client
+  receipt/      text extraction (PDF / DOCX / OCR) and the receipt parser
+  recommender/  support and extended-warranty links
+  scheduler/    daily expiry check
+  ui/           JavaFX controllers, dialogs, theming, notifications
+src/main/resources/
+  fxml/         main, detail and settings views
+  styles/       app.css (tokens + components) and dark.css (dark tokens)
+data/           database, stored images and receipts (created at runtime)
+```
 
-2. **Run the Application:**
-   ```powershell
-   mvn javafx:run
-   ```
-
-## Key Features
-- **Comprehensive Dashboard:** View all your active and expired warranties at a glance.
-- **Warranty Management:** Easily add, edit, and categorize product warranties and receipts.
-- **OCR Receipt Scanning:** Automatically extract text and details from uploaded receipts using cloud-based Optical Character Recognition (Google Vision API with OCR.space fallback).
-- **Automated Expiry Notifications:** A background scheduler continuously monitors your items and triggers Windows desktop tray notifications before a warranty expires.
-- **Local Embedded Database:** Uses an H2 database for fast, offline, and seamless data persistence without complicated setup.
-- **Smart Recommendations:** Includes a basic recommender system that analyzes your saved items and provides personalized insights.
-- **Settings & Customization:** Features a dynamic UI with light/dark themes and customizable image-fetch properties.
-- **Data Export & Cloud Prep:** Well-structured architecture designed for eventual cloud sync, email alerts, and external data access via REST Controllers.
-
-## Next Steps
-- Replace H2 with PostgreSQL for production use and provide migration scripts.
-- Add robust authentication and cloud backup for receipts.
-- Implement persistent notification channels like Email or Push notifications.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for how the pieces fit together.
