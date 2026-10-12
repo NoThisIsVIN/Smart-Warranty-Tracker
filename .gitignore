@@ -1,24 +1,23 @@
 target/
 *.class
 
-# IntelliJ IDEA / Eclipse / VS Code
+# IDE
 .idea/
 *.iml
 .vscode/
 
-# Local databases and backups
-data/smartwarranty.trace.db
-data/smartwarranty.mv.db
+# Local database and backups
+data/smartwarranty.*.db
 *.bak
 
-# OS generated files
+# Local API keys
+*image-fetch-config.properties
+data/config/
+
+# OS
 .DS_Store
 Thumbs.db
 
-# Ignore API configs
-*image-fetch-config.properties
-
-
-# Ignore API configs
-*image-fetch-config.properties
-
+# Runtime data (user images and receipts)
+data/images/
+data/receipts/

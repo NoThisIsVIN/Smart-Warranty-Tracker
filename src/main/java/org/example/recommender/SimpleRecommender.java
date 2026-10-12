@@ -1,97 +1,111 @@
 package org.example.recommender;
 
 import org.example.model.Warranty;
-import org.example.repo.WarrantyRepository;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.regex.Pattern;
 
+/** Builds protection-plan and support links for a warranty, routed to the manufacturer's site when it is known. */
 @Component
 public class SimpleRecommender {
-    private final WarrantyRepository repo;
 
-    public SimpleRecommender(WarrantyRepository repo) { this.repo = repo; }
-
-    public List<String> recommendByProductAndModel(String productName, String modelName) {
-        List<Warranty> all = repo.findAll();
-        for (Warranty w : all) {
-            if (w.getProductName().equalsIgnoreCase(productName) && w.getModelName() != null
-                    && w.getModelName().equalsIgnoreCase(modelName)) {
-                return buildRecommendations(w);
-            }
-        }
-
-        for (Warranty w : all) {
-            if (w.getProductName().equalsIgnoreCase(productName)) {
-                List<String> recs = new ArrayList<>();
-                recs.add("Similar product found: " + w.getModelName() + " — check retailer offers: " + protectionLinkFor(w));
-                return recs;
-            }
-        }
-        return new ArrayList<>();
-    }
-
-    private List<String> buildRecommendations(Warranty w) {
-        List<String> recs = new ArrayList<>();
-        if (w.getWarrantyMonths() < 12) recs.add("1-year extended warranty — " + protectionLinkFor(w));
-        if (w.getWarrantyMonths() < 24) recs.add("2-year protection plan — " + protectionLinkFor(w));
-        recs.add("Service & support page — " + supportLinkFor(w));
-        return recs;
-    }
-
-    private String protectionLinkFor(Warranty w) {
-        String brand = detectBrand(w);
-        String model = (w.getModelName() == null ? "" : w.getModelName());
-        if (brand == null) return googleQuery("extended warranty " + w.getProductName() + " " + model);
-        switch (brand) {
-            case "samsung": return "https://www.samsung.com/us/support/samsung-care-plus/";
-            case "oneplus": return "https://www.oneplus.com/support/oneplus-care";
-            case "asus": return googleSiteQuery("asus.com", "warranty extension " + model);
-            case "apple": return "https://support.apple.com/applecare";
-            case "dell": return googleSiteQuery("dell.com", "extended warranty " + model);
-            case "lenovo": return googleSiteQuery("lenovo.com", "warranty upgrade " + model);
-            case "hp": return googleSiteQuery("hp.com", "care pack " + model);
-            case "acer": return googleSiteQuery("acer.com", "extended warranty " + model);
-            case "xiaomi": return googleSiteQuery("mi.com", "protection plan " + model);
-            default: return googleSiteQuery(brand + ".com", "extended warranty " + model);
+    private record Brand(String key, String displayName, Pattern pattern) {
+        static Brand of(String key, String displayName, String keywords) {
+            return new Brand(key, displayName, Pattern.compile("\\b(?:" + keywords + ")\\b", Pattern.CASE_INSENSITIVE));
         }
     }
 
-    private String supportLinkFor(Warranty w) {
-        String brand = detectBrand(w);
-        String model = (w.getModelName() == null ? "" : w.getModelName());
-        if (brand == null) return googleQuery(w.getProductName() + " " + model + " support");
-        switch (brand) {
-            case "samsung": return "https://www.samsung.com/us/support/search/?query=" + url(model);
-            case "oneplus": return "https://www.oneplus.com/support/search?keyword=" + url(model);
-            case "asus": return "https://www.asus.com/supportsearch?keyword=" + url(model);
-            case "apple": return "https://support.apple.com/en-us/search?query=" + url(model);
-            case "dell": return "https://www.dell.com/support/search/en-us?query=" + url(model);
-            case "lenovo": return "https://support.lenovo.com/us/en/search?query=" + url(model);
-            case "hp": return "https://support.hp.com/us-en/search?q=" + url(model);
-            case "acer": return "https://www.acer.com/us-en/support?query=" + url(model);
-            case "xiaomi": return "https://www.mi.com/global/support/search?keyword=" + url(model);
-            default: return googleSiteQuery(brand + ".com", model + " support");
+    /** Brand names plus a few product lines that imply the brand. */
+    private static final List<Brand> BRANDS = List.of(
+            Brand.of("samsung", "Samsung", "samsung|galaxy"),
+            Brand.of("oneplus", "OnePlus", "oneplus"),
+            Brand.of("apple", "Apple", "apple|iphone|ipad|macbook|imac|airpods"),
+            Brand.of("asus", "ASUS", "asus|zenbook|vivobook|rog"),
+            Brand.of("dell", "Dell", "dell|inspiron|latitude|xps|alienware"),
+            Brand.of("lenovo", "Lenovo", "lenovo|thinkpad|ideapad"),
+            Brand.of("hp", "HP", "hp|pavilion|elitebook|omen"),
+            Brand.of("acer", "Acer", "acer|aspire|predator"),
+            Brand.of("xiaomi", "Xiaomi", "xiaomi|redmi|poco"),
+            Brand.of("google", "Google", "google|pixel"),
+            Brand.of("motorola", "Motorola", "motorola|moto"),
+            Brand.of("nokia", "Nokia", "nokia"),
+            Brand.of("oppo", "OPPO", "oppo"),
+            Brand.of("vivo", "vivo", "vivo"),
+            Brand.of("realme", "realme", "realme"),
+            Brand.of("sony", "Sony", "sony|playstation|bravia"));
+
+    public List<Recommendation> recommend(Warranty w) {
+        String product = clean(w.getProductName());
+        String model = clean(w.getModelName());
+        Brand brand = detectBrand(product + " " + model);
+        if (brand == null) brand = detectBrand(clean(w.getRetailer()));
+        String subject = (product + " " + model).trim();
+        String searchTerm = model.isEmpty() ? product : model;
+
+        if (brand == null) {
+            return List.of(
+                    new Recommendation("Extended warranty options", googleQuery("extended warranty " + subject)),
+                    new Recommendation("Support & manuals", googleQuery(subject + " support")));
         }
+        return List.of(
+                new Recommendation(brand.displayName() + " protection plans", protectionLink(brand, searchTerm)),
+                new Recommendation(brand.displayName() + " support", supportLink(brand, searchTerm)));
     }
 
-    private String detectBrand(Warranty w) {
-        String text = (w.getProductName() + " " + (w.getModelName() == null ? "" : w.getModelName()) + " " + (w.getRetailer() == null ? "" : w.getRetailer())).toLowerCase();
-        List<String> brands = Arrays.asList("samsung","oneplus","asus","apple","dell","lenovo","hp","acer","xiaomi","google","motorola","nokia","oppo","vivo","realme","sony");
-        for (String b : brands) if (text.contains(b)) return b;
+    private static String protectionLink(Brand brand, String term) {
+        return switch (brand.key()) {
+            case "samsung" -> "https://www.samsung.com/us/support/samsung-care-plus/";
+            case "oneplus" -> "https://www.oneplus.com/support/oneplus-care";
+            case "apple" -> "https://support.apple.com/applecare";
+            case "asus" -> googleSiteQuery("asus.com", "warranty extension " + term);
+            case "dell" -> googleSiteQuery("dell.com", "extended warranty " + term);
+            case "lenovo" -> googleSiteQuery("lenovo.com", "warranty upgrade " + term);
+            case "hp" -> googleSiteQuery("hp.com", "care pack " + term);
+            case "acer" -> googleSiteQuery("acer.com", "extended warranty " + term);
+            case "xiaomi" -> googleSiteQuery("mi.com", "protection plan " + term);
+            default -> googleSiteQuery(brand.key() + ".com", "extended warranty " + term);
+        };
+    }
+
+    private static String supportLink(Brand brand, String term) {
+        String q = encode(term);
+        return switch (brand.key()) {
+            case "samsung" -> "https://www.samsung.com/us/support/search/?query=" + q;
+            case "oneplus" -> "https://www.oneplus.com/support/search?keyword=" + q;
+            case "apple" -> "https://support.apple.com/en-us/search?query=" + q;
+            case "asus" -> "https://www.asus.com/supportsearch?keyword=" + q;
+            case "dell" -> "https://www.dell.com/support/search/en-us?query=" + q;
+            case "lenovo" -> "https://support.lenovo.com/us/en/search?query=" + q;
+            case "hp" -> "https://support.hp.com/us-en/search?q=" + q;
+            case "acer" -> "https://www.acer.com/us-en/support?query=" + q;
+            case "xiaomi" -> "https://www.mi.com/global/support/search?keyword=" + q;
+            default -> googleSiteQuery(brand.key() + ".com", term + " support");
+        };
+    }
+
+    private static Brand detectBrand(String text) {
+        for (Brand b : BRANDS) {
+            if (b.pattern().matcher(text).find()) return b;
+        }
         return null;
     }
 
-    private String googleQuery(String q) {
-        return "https://www.google.com/search?q=" + url(q);
+    private static String googleQuery(String q) {
+        return "https://www.google.com/search?q=" + encode(q);
     }
 
-    private String googleSiteQuery(String domain, String q) {
-        return "https://www.google.com/search?q=" + url("site:" + domain + " " + q);
+    private static String googleSiteQuery(String domain, String q) {
+        return googleQuery("site:" + domain + " " + q);
     }
 
-    private String url(String s) {
-        return s.trim().replace(" ", "+");
+    private static String encode(String s) {
+        return URLEncoder.encode(s.trim().replaceAll("\\s+", " "), StandardCharsets.UTF_8);
     }
 
+    private static String clean(String s) {
+        return s == null ? "" : s.trim();
+    }
 }

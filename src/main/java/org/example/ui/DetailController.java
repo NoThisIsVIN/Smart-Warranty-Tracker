@@ -1,446 +1,292 @@
 package org.example.ui;
 
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.scene.Cursor;
+import javafx.scene.Node;
+import javafx.scene.control.Button;
+import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
-import javafx.stage.Stage;
-import java.awt.Desktop;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.image.PixelFormat;
+import javafx.scene.image.WritableImage;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.stage.Window;
+import org.example.config.AppSettings;
+import org.example.model.Warranty;
+import org.example.model.WarrantyStatus;
+import org.example.receipt.ReceiptTextExtractor;
+import org.example.recommender.Recommendation;
+import org.example.recommender.SimpleRecommender;
+import org.example.service.FileStorage;
+import org.example.service.WarrantyService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import javafx.stage.FileChooser;
-import org.example.model.Warranty;
-import org.example.recommender.SimpleRecommender;
-import org.example.service.WarrantyService;
-import javafx.scene.image.ImageView;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.control.ListView;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.Hyperlink;
-import org.springframework.beans.factory.annotation.Autowired;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.Set;
 
+/** Controller for {@code detail.fxml}; created by {@link ViewLoader} with constructor injection. */
 public class DetailController {
-    @FXML private Label lblProduct;
-    @FXML private Label lblModel;
-    @FXML private Label lblRetailer;
-    @FXML private Label lblPurchase;
-    @FXML private Label lblExpiry;
-    @FXML private Label lblMonths;
-    @FXML private Label lblStatus;
-    @FXML private Label lblCategory;
+    private static final Logger log = LoggerFactory.getLogger(DetailController.class);
+    private static final Set<String> IMAGE_EXTENSIONS = Set.of(".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp");
+    private static final String STATUS_PREFIX = "status-";
+
+    private final WarrantyService warrantyService;
+    private final WarrantyFormDialog formDialog;
+    private final SimpleRecommender recommender;
+    private final FileStorage storage;
+    private final ReceiptTextExtractor extractor;
+    private final AppSettings settings;
+
+    @FXML private Label titleLabel;
+    @FXML private Label subtitleLabel;
+    @FXML private Label statusPill;
+    @FXML private StackPane imageWell;
     @FXML private ImageView productImage;
+    @FXML private Label imagePlaceholder;
+    @FXML private Label modelValue;
+    @FXML private Label retailerValue;
+    @FXML private Label purchasedValue;
+    @FXML private Label durationValue;
+    @FXML private Label expiresValue;
+    @FXML private ProgressBar progressBar;
+    @FXML private Label progressLabel;
     @FXML private ImageView receiptImage;
-    @FXML private ProgressBar warrantyProgress;
-    @FXML private Label lblPercent;
-    @FXML private ListView<String> recommendationsList;
+    @FXML private Label receiptPlaceholder;
+    @FXML private Button openReceiptButton;
+    @FXML private Button attachReceiptButton;
+    @FXML private VBox linkList;
 
     private Warranty warranty;
-    @Autowired
-    private WarrantyService warrantyService;
-    private SimpleRecommender recommender;
+    private Task<Image> receiptPreviewTask;
 
-    public void setWarrantyService(WarrantyService service) {
-        this.warrantyService = service;
+    public DetailController(WarrantyService warrantyService, WarrantyFormDialog formDialog, SimpleRecommender recommender,
+                            FileStorage storage, ReceiptTextExtractor extractor, AppSettings settings) {
+        this.warrantyService = warrantyService;
+        this.formDialog = formDialog;
+        this.recommender = recommender;
+        this.storage = storage;
+        this.extractor = extractor;
+        this.settings = settings;
     }
 
-    public void setRecommender(SimpleRecommender r) {
-        this.recommender = r;
+    public void setWarranty(Warranty warranty) {
+        this.warranty = warranty;
+        showOverview();
+        showProductImage();
+        showReceipt();
+        showLinks();
     }
 
-    public void setWarranty(Warranty w) {
-        this.warranty = w;
-        if (w != null) {
+    private void showOverview() {
+        LocalDate today = LocalDate.now();
+        WarrantyStatus status = warranty.status(today, settings.getReminderDays());
+        boolean dated = warranty.getPurchaseDate() != null;
 
-            lblPurchase.setText(w.getPurchaseDate() == null ? "" : w.getPurchaseDate().toString());
-            lblExpiry.setText(w.getExpiryDate() == null ? "" : w.getExpiryDate().toString());
-            lblMonths.setText(String.valueOf(w.getWarrantyMonths()));
-            if (lblCategory != null) {
-                lblCategory.setText(w.getRetailer() == null ? "" : w.getRetailer());
-            }
+        titleLabel.setText(warranty.getDisplayName());
+        subtitleLabel.setText(Formats.orDash(warranty.getRetailer()));
+        setShown(subtitleLabel, warranty.getRetailer() != null && !warranty.getRetailer().isBlank());
+        statusPill.setText(status.label());
+        setStatusClass(statusPill, status);
+        setShown(statusPill, dated);
 
-            if (lblStatus != null) {
-                try {
-                    long daysLeft = w.getDaysLeft();
-                    if (daysLeft < 0) {
-                        lblStatus.setText("expired");
-                        lblStatus.getStyleClass().removeAll("status-label");
-                        lblStatus.getStyleClass().addAll("status-label", "badge-expired");
-                    } else {
-                        lblStatus.setText(daysLeft + " days left");
-                        lblStatus.getStyleClass().removeAll("status-label");
-                        lblStatus.getStyleClass().addAll("status-label", "badge-active");
-                    }
-                } catch (Exception ex) {
-                    lblStatus.setText("");
-                }
-            }
+        modelValue.setText(Formats.orDash(warranty.getModelName()));
+        retailerValue.setText(Formats.orDash(warranty.getRetailer()));
+        purchasedValue.setText(Formats.date(warranty.getPurchaseDate()));
+        durationValue.setText(Formats.duration(warranty.getWarrantyMonths()));
+        expiresValue.setText(Formats.date(warranty.getExpiryDate()));
 
-            try {
-                javafx.scene.image.Image img = null;
-                if (w.getImageUrl() != null && !w.getImageUrl().isBlank()) {
-                    try {
-                        img = new javafx.scene.image.Image(w.getImageUrl(), false);
-                        if (img.isError()) img = null;
-                    } catch (Exception inner) {
-                        img = null;
-                    }
-                }
-                if (productImage != null) {
-                    if (img != null) {
-                        javafx.scene.image.Image resized = new javafx.scene.image.Image(img.getUrl(), 300, 240, true, true, true);
-                        productImage.setImage(resized);
-                    } else {
-                        try {
-                            productImage.setImage(new javafx.scene.image.Image(getClass().getResourceAsStream("/images/placeholder.png")));
-                        } catch (Exception ex2) {
-                            productImage.setImage(null);
-                        }
-                    }
-                }
+        progressBar.setProgress(warranty.elapsedFraction(today));
+        setStatusClass(progressBar, status);
+        setShown(progressBar, dated);
+        progressLabel.setText(progressText(today, dated));
+    }
 
-                javafx.scene.image.Image rimg = null;
-                if (w.getReceiptImageUrl() != null && !w.getReceiptImageUrl().isBlank()) {
-                    try {
-                        rimg = new javafx.scene.image.Image(w.getReceiptImageUrl(), false);
-                        if (rimg.isError()) rimg = null;
-                    } catch (Exception inner) { rimg = null; }
-                }
-                if (receiptImage != null) {
-                    if (rimg != null) {
-                        javafx.scene.image.Image rres = new javafx.scene.image.Image(rimg.getUrl(), 300, 240, true, true, true);
-                        receiptImage.setImage(rres);
-                    } else {
-                        try { receiptImage.setImage(new javafx.scene.image.Image(getClass().getResourceAsStream("/images/receipt-placeholder.png"))); } catch (Exception ex3) { receiptImage.setImage(null); }
-                    }
-                }
-            } catch (Exception ex) {
-                if (productImage != null) productImage.setImage(null);
-                if (receiptImage != null) receiptImage.setImage(null);
-            }
+    private String progressText(LocalDate today, boolean dated) {
+        String daysLeft = Formats.daysLeft(warranty, today);
+        if (!dated) return daysLeft;
+        return daysLeft + " · " + Math.round(warranty.elapsedFraction(today) * 100) + "% elapsed";
+    }
 
-            try {
-                java.time.LocalDate start = w.getPurchaseDate();
-                java.time.LocalDate end = w.getExpiryDate();
-                long totalDays = java.time.temporal.ChronoUnit.DAYS.between(start, end);
-                long elapsed = java.time.temporal.ChronoUnit.DAYS.between(start, java.time.LocalDate.now());
-                double pct = 0.0;
-                if (totalDays > 0) pct = Math.max(0.0, Math.min(1.0, (double) elapsed / (double) totalDays));
-                if (warrantyProgress != null) {
-                    warrantyProgress.setProgress(pct);
-                }
-                if (lblPercent != null) {
-                    lblPercent.setText(String.format("%.0f%% used", pct * 100.0));
-                }
-            } catch (Exception ex) {
-                if (warrantyProgress != null) warrantyProgress.setProgress(0);
-                if (lblPercent != null) lblPercent.setText("");
-            }
+    private void showProductImage() {
+        Optional<Path> file = storage.resolve(warranty.getImageUrl());
+        imagePlaceholder.setText(initials(warranty.getDisplayName()));
+        imageWell.setCursor(file.isPresent() ? Cursor.HAND : Cursor.DEFAULT);
+        Image image = file.map(p -> new Image(p.toUri().toString(), 640, 480, true, true, true)).orElse(null);
+        productImage.setImage(image);
+        imagePlaceholder.visibleProperty().unbind();
+        if (image == null) imagePlaceholder.setVisible(true);
+        else imagePlaceholder.visibleProperty().bind(notLoaded(image));
+    }
+
+    private void showReceipt() {
+        if (receiptPreviewTask != null) receiptPreviewTask.cancel();
+        String stored = warranty.getReceiptImageUrl();
+        boolean hasReceipt = stored != null && !stored.isBlank();
+        Optional<Path> file = storage.resolve(stored);
+
+        attachReceiptButton.setText(hasReceipt ? "Replace" : "Attach");
+        openReceiptButton.setDisable(file.isEmpty());
+        receiptImage.setImage(null);
+        receiptPlaceholder.visibleProperty().unbind();
+        receiptPlaceholder.setVisible(true);
+        if (file.isEmpty()) {
+            receiptPlaceholder.setText(hasReceipt ? "File missing" : "No receipt");
+            return;
+        }
+        Path path = file.get();
+        String ext = FileStorage.extension(path.getFileName().toString());
+        receiptPlaceholder.setText(ext.isEmpty() ? "File" : ext.substring(1).toUpperCase(Locale.ROOT));
+        if (IMAGE_EXTENSIONS.contains(ext)) {
+            Image image = new Image(path.toUri().toString(), 240, 180, true, true, true);
+            receiptImage.setImage(image);
+            receiptPlaceholder.visibleProperty().bind(notLoaded(image));
+        } else if (ext.equals(".pdf")) {
+            renderPdfPreview(path);
         }
     }
 
-    @FXML
-    public void onGetRecommendations() {
-        if (warranty == null) {
-            Alert a = new Alert(Alert.AlertType.WARNING, "No warranty loaded.", ButtonType.OK);
-            a.showAndWait();
-            return;
-        }
-        if (recommender == null) {
-            Alert a = new Alert(Alert.AlertType.ERROR, "Recommender unavailable.", ButtonType.OK);
-            a.showAndWait();
-            return;
-        }
-        java.util.List<String> recs = recommender.recommendByProductAndModel(warranty.getProductName(), warranty.getModelName());
-        recommendationsList.getItems().clear();
-        if (recs == null || recs.isEmpty()) {
-            recommendationsList.getItems().add("No recommendations found for this product.");
-            recommendationsList.setCellFactory(null);
-            return;
-        }
-        recommendationsList.getItems().setAll(recs);
-        recommendationsList.setCellFactory(lv -> new ListCell<>() {
+    private void renderPdfPreview(Path pdf) {
+        Task<Image> task = new Task<>() {
             @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setGraphic(null);
-                    setText(null);
-                    return;
-                }
-                String label = item;
-                String url = null;
-                if (item.contains(" — ")) {
-                    String[] parts = item.split(" — ", 2);
-                    label = parts[0]; url = parts[1];
-                } else if (item.contains(" - ")) {
-                    String[] parts = item.split(" - ", 2);
-                    label = parts[0]; url = parts[1];
-                } else {
-                    int idx = item.indexOf("http");
-                    if (idx >= 0) { label = item.substring(0, idx).trim(); url = item.substring(idx).trim(); }
-                }
-                final String renderedLabel = label + (url == null ? "" : " (link)");
-                final String capturedUrl = url;
-                Hyperlink h = new Hyperlink(renderedLabel);
-                h.setOnAction(evt -> {
-                    String finalUrl = (capturedUrl != null && !capturedUrl.isBlank())
-                            ? capturedUrl
-                            : ("https://www.google.com/search?q=" +
-                               java.net.URLEncoder.encode(warranty.getProductName() + " " + warranty.getModelName(), java.nio.charset.StandardCharsets.UTF_8));
-                    try {
-                        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                            Desktop.getDesktop().browse(new URI(finalUrl));
-                        } else {
-                            String os = System.getProperty("os.name").toLowerCase();
-                            if (os.contains("win")) {
-                                Runtime.getRuntime().exec(new String[]{"rundll32", "url.dll,FileProtocolHandler", finalUrl});
-                            } else {
-                                Runtime.getRuntime().exec(new String[]{"xdg-open", finalUrl});
-                            }
-                        }
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                        javafx.application.Platform.runLater(() -> new Alert(Alert.AlertType.ERROR, "Unable to open link: " + ex.getMessage(), ButtonType.OK).showAndWait());
-                    }
-                });
-                setGraphic(h);
-                setText(null);
+            protected Image call() {
+                return extractor.renderFirstPage(pdf).map(DetailController::toFxImage).orElse(null);
             }
+        };
+        task.setOnSucceeded(e -> {
+            if (task.getValue() == null) return;
+            receiptImage.setImage(task.getValue());
+            receiptPlaceholder.setVisible(false);
         });
+        task.setOnFailed(e -> log.warn("Couldn't render receipt preview", task.getException()));
+        receiptPreviewTask = task;
+        WarrantyFormDialog.runAsync(task, "receipt-preview");
     }
 
-    @FXML
-    public void onClose() {
-        Stage s = (Stage) lblProduct.getScene().getWindow();
-        s.close();
-    }
-
-    @FXML
-    public void onDelete() {
-        if (warranty != null) {
-            warrantyService.deleteWarranty(warranty.getId());
-            Stage s = (Stage) lblProduct.getScene().getWindow();
-            s.close();
+    private void showLinks() {
+        linkList.getChildren().clear();
+        List<Recommendation> recommendations = recommender.recommend(warranty);
+        for (Recommendation r : recommendations) {
+            Hyperlink link = new Hyperlink(r.label());
+            link.setOnAction(e -> Browser.open(r.url()));
+            linkList.getChildren().add(link);
+        }
+        if (recommendations.isEmpty()) {
+            Label none = new Label("No suggestions for this product.");
+            none.getStyleClass().add("muted");
+            linkList.getChildren().add(none);
         }
     }
 
     @FXML
-    public void onCheckReceipt() {
-
-        if (warranty != null && warranty.getReceiptImageUrl() != null && !warranty.getReceiptImageUrl().isBlank()) {
-            try {
-                javafx.scene.image.Image receiptImage = new javafx.scene.image.Image(warranty.getReceiptImageUrl());
-                if (receiptImage.isError()) {
-                    Alert a = new Alert(Alert.AlertType.ERROR, "Unable to load receipt image.", ButtonType.OK);
-                    a.showAndWait();
-                    return;
-                }
-
-                Stage receiptStage = new Stage();
-                receiptStage.setTitle("Receipt Image");
-
-                javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView(receiptImage);
-                imageView.setPreserveRatio(true);
-                imageView.setFitWidth(600);
-
-                javafx.scene.layout.StackPane root = new javafx.scene.layout.StackPane(imageView);
-                root.setStyle("-fx-background-color: #f0f0f0; -fx-padding: 10;");
-
-                receiptStage.setScene(new javafx.scene.Scene(root, 620, 800));
-                receiptStage.showAndWait();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                Alert a = new Alert(Alert.AlertType.ERROR, "Error displaying receipt: " + ex.getMessage(), ButtonType.OK);
-                a.showAndWait();
-            }
-        } else {
-            Alert a = new Alert(Alert.AlertType.WARNING, "No receipt image available for this warranty.", ButtonType.OK);
-            a.showAndWait();
-        }
+    private void onImageClicked() {
+        openStored(warranty.getImageUrl());
     }
 
     @FXML
-    public void onViewProduct() {
-        if (warranty != null && warranty.getImageUrl() != null && !warranty.getImageUrl().isBlank()) {
-            String src = warranty.getImageUrl();
-            String normalized = src;
-            try {
-
-                if (!normalized.startsWith("file:") && !normalized.startsWith("http://") && !normalized.startsWith("https://")) {
-                    Path p = Paths.get(normalized);
-                    if (Files.exists(p)) normalized = p.toUri().toString();
-                }
-            } catch (Exception ex) {
-
-            }
-            try {
-                javafx.scene.image.Image img = new javafx.scene.image.Image(normalized);
-                if (img.isError()) {
-
-                    tryOpenExternal(normalized);
-                    return;
-                }
-                Stage st = new Stage(); st.setTitle("Product Image");
-                javafx.scene.image.ImageView iv = new javafx.scene.image.ImageView(img); iv.setPreserveRatio(true); iv.setFitWidth(800);
-                javafx.scene.layout.StackPane root = new javafx.scene.layout.StackPane(iv); root.setStyle("-fx-background-color:#fff; -fx-padding:10;");
-                st.setScene(new javafx.scene.Scene(root, 820, 900)); st.showAndWait();
-            } catch (Exception e) {
-                tryOpenExternal(normalized);
-            }
-        } else { new Alert(Alert.AlertType.WARNING, "No product image available.", ButtonType.OK).showAndWait(); }
+    private void onOpenReceipt() {
+        openStored(warranty.getReceiptImageUrl());
     }
 
     @FXML
-    public void onViewReceipt() {
-        System.out.println("=== ON VIEW RECEIPT ===");
-        System.out.println("Warranty: " + (warranty != null ? warranty.getProductName() : "null"));
-        System.out.println("Receipt URL: " + (warranty != null ? warranty.getReceiptImageUrl() : "null"));
-        System.out.println("==================");
-        
-        if (warranty != null && warranty.getReceiptImageUrl() != null && !warranty.getReceiptImageUrl().isBlank()) {
-            String src = warranty.getReceiptImageUrl();
-
-            if (src.toLowerCase().endsWith(".pdf")) {
-                System.out.println("PDF detected, opening with external viewer");
-                tryOpenExternal(src);
-                return;
+    private void onAttachReceipt() {
+        File file = WarrantyFormDialog.receiptChooser().showOpenDialog(window());
+        if (file == null) return;
+        Warranty current = warranty;
+        Task<Warranty> task = new Task<>() {
+            @Override
+            protected Warranty call() throws IOException {
+                return warrantyService.replaceReceipt(current, file.toPath());
             }
-
-            String normalized = src;
-            try {
-                if (!normalized.startsWith("file:") && !normalized.startsWith("http://") && !normalized.startsWith("https://")) {
-                    Path p = Paths.get(normalized);
-                    if (Files.exists(p)) normalized = p.toUri().toString();
-                }
-            } catch (Exception ex) {
-
-            }
-            try {
-                javafx.scene.image.Image img = new javafx.scene.image.Image(normalized);
-                if (img.isError()) {
-
-                    System.out.println("Image error, trying external viewer");
-                    tryOpenExternal(normalized);
-                    return;
-                }
-                Stage st = new Stage(); st.setTitle("Receipt Image");
-                javafx.scene.image.ImageView iv = new javafx.scene.image.ImageView(img); iv.setPreserveRatio(true); iv.setFitWidth(800);
-                javafx.scene.layout.StackPane root = new javafx.scene.layout.StackPane(iv); root.setStyle("-fx-background-color:#fff; -fx-padding:10;");
-                st.setScene(new javafx.scene.Scene(root, 820, 900)); st.showAndWait();
-            } catch (Exception e) {
-                System.err.println("Error viewing receipt: " + e.getMessage());
-                e.printStackTrace();
-                tryOpenExternal(normalized);
-            }
-        } else { 
-            System.out.println("No receipt available - showing warning");
-            new Alert(Alert.AlertType.WARNING, "No receipt image available.", ButtonType.OK).showAndWait(); 
-        }
+        };
+        task.setOnSucceeded(e -> {
+            attachReceiptButton.setDisable(false);
+            warranty = task.getValue();
+            showReceipt();
+        });
+        task.setOnFailed(e -> {
+            attachReceiptButton.setDisable(false);
+            log.warn("Couldn't attach receipt {}", file.getName(), task.getException());
+            Dialogs.error(window(), "Couldn't attach receipt", task.getException().getMessage());
+        });
+        attachReceiptButton.setDisable(true);
+        WarrantyFormDialog.runAsync(task, "receipt-import");
     }
 
     @FXML
-    public void onShowOrAttachReceipt() {
-        if (warranty == null) {
-            new Alert(javafx.scene.control.Alert.AlertType.WARNING, "No warranty selected.", javafx.scene.control.ButtonType.OK).showAndWait();
-            return;
-        }
-        String receipt = warranty.getReceiptImageUrl();
-        if (receipt == null || receipt.isBlank()) {
-
-            FileChooser fc = new FileChooser();
-            fc.setTitle("Attach Receipt Image");
-            fc.getExtensionFilters().addAll(
-                    new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif"),
-                    new FileChooser.ExtensionFilter("All Files", "*")
-            );
-            File sel = fc.showOpenDialog(lblProduct.getScene() == null ? null : (Stage) lblProduct.getScene().getWindow());
-            if (sel != null && sel.exists()) {
-                try {
-                    java.nio.file.Path destDir = java.nio.file.Paths.get("data", "receipts");
-                    java.nio.file.Files.createDirectories(destDir);
-                    String name = sel.getName(); int dot = name.lastIndexOf('.'); String ext = dot>=0?name.substring(dot):"";
-                    java.nio.file.Path dest = destDir.resolve(java.util.UUID.randomUUID().toString() + ext);
-                    java.nio.file.Files.copy(sel.toPath(), dest, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                    String uri = dest.toUri().toString();
-                    warranty.setReceiptImageUrl(uri);
-
-                    if (warrantyService != null) {
-                        warrantyService.addWarranty(warranty);
-                    }
-
-                    onViewReceipt();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    new Alert(javafx.scene.control.Alert.AlertType.ERROR, "Unable to attach receipt: " + ex.getMessage(), javafx.scene.control.ButtonType.OK).showAndWait();
-                }
-            }
-        } else {
-            onViewReceipt();
-        }
+    private void onEdit() {
+        formDialog.showEdit(window(), warranty).ifPresent(this::setWarranty);
     }
 
-    private void tryOpenExternal(String uriOrPath) {
+    @FXML
+    private void onDelete() {
+        String message = "This removes " + warranty.getDisplayName() + " and its stored image and receipt.";
+        if (!Dialogs.confirm(window(), "Delete warranty?", message, "Delete")) return;
         try {
-            System.out.println("tryOpenExternal called with: " + uriOrPath);
-
-            URI u = null;
-            File f = null;
-            
-            if (uriOrPath.startsWith("file:")) {
-
-                String fixedUri = uriOrPath;
-                if (uriOrPath.startsWith("file:/") && !uriOrPath.startsWith("file:///")) {
-
-                    fixedUri = "file:///" + uriOrPath.substring(6);
-                }
-                System.out.println("Fixed URI: " + fixedUri);
-                u = new URI(fixedUri);
-                f = new File(u);
-            } else if (uriOrPath.startsWith("http://") || uriOrPath.startsWith("https://")) {
-                u = new URI(uriOrPath);
-            } else {
-
-                Path p = Paths.get(uriOrPath);
-                if (Files.exists(p)) {
-                    f = p.toFile();
-                }
-            }
-            
-            System.out.println("File object: " + (f != null ? f.getAbsolutePath() : "null"));
-            System.out.println("File exists: " + (f != null && f.exists()));
-            
-            if (f != null && f.exists()) {
-                if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
-                    Desktop.getDesktop().open(f);
-                    System.out.println("Opened file with Desktop.open()");
-                    return;
-                } else {
-
-                    String os = System.getProperty("os.name").toLowerCase();
-                    if (os.contains("win")) {
-                        Runtime.getRuntime().exec(new String[]{"cmd", "/c", "start", "", f.getAbsolutePath()});
-                        System.out.println("Opened file with Windows start command");
-                        return;
-                    }
-                }
-            }
-            
-            final String errorPath = (f != null ? f.getAbsolutePath() : uriOrPath);
-            javafx.application.Platform.runLater(() -> {
-                Alert a = new Alert(Alert.AlertType.ERROR, "Unable to display the image. Path/URI: " + errorPath, ButtonType.OK);
-                a.showAndWait();
-            });
-        } catch (URISyntaxException | IOException ex) {
-            ex.printStackTrace();
-            javafx.application.Platform.runLater(() -> {
-                Alert a = new Alert(Alert.AlertType.ERROR, "Error opening image: " + ex.getMessage(), ButtonType.OK);
-                a.showAndWait();
-            });
+            warrantyService.delete(warranty);
+            onClose();
+        } catch (RuntimeException e) {
+            log.error("Couldn't delete warranty {}", warranty.getId(), e);
+            Dialogs.error(window(), "Couldn't delete warranty", e.getMessage());
         }
+    }
+
+    @FXML
+    private void onClose() {
+        if (receiptPreviewTask != null) receiptPreviewTask.cancel();
+        window().hide();
+    }
+
+    private void openStored(String stored) {
+        storage.resolve(stored).ifPresent(path -> Browser.open(path.toUri().toString()));
+    }
+
+    private Window window() {
+        return titleLabel.getScene().getWindow();
+    }
+
+    private static BooleanBinding notLoaded(Image image) {
+        return Bindings.createBooleanBinding(() -> image.getProgress() < 1 || image.isError(),
+                image.progressProperty(), image.errorProperty());
+    }
+
+    private static Image toFxImage(BufferedImage source) {
+        int width = source.getWidth();
+        int height = source.getHeight();
+        int[] argb = source.getRGB(0, 0, width, height, null, 0, width);
+        WritableImage image = new WritableImage(width, height);
+        image.getPixelWriter().setPixels(0, 0, width, height, PixelFormat.getIntArgbInstance(), argb, 0, width);
+        return image;
+    }
+
+    private static String initials(String name) {
+        StringBuilder sb = new StringBuilder();
+        for (String word : name.strip().split("\\s+")) {
+            if (!word.isEmpty() && sb.length() < 2) sb.appendCodePoint(word.codePointAt(0));
+        }
+        return sb.isEmpty() ? "?" : sb.toString().toUpperCase(Locale.ROOT);
+    }
+
+    private static void setStatusClass(Node node, WarrantyStatus status) {
+        node.getStyleClass().removeIf(c -> c.startsWith(STATUS_PREFIX) && !c.equals("status-pill"));
+        node.getStyleClass().add(STATUS_PREFIX + status.name().toLowerCase(Locale.ROOT));
+    }
+
+    private static void setShown(Node node, boolean shown) {
+        node.setVisible(shown);
+        node.setManaged(shown);
     }
 }

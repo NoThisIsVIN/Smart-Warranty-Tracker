@@ -1,72 +1,128 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="org.example.ui.MainController">
-    <!-- LEFT SIDEBAR -->
-    <left>
-        <VBox spacing="18" alignment="TOP_CENTER" styleClass="sidebar">
-            <VBox alignment="TOP_LEFT">
-                <Label text="SMART  WARRANTY" wrapText="true" maxWidth="Infinity" styleClass="logo-main" />
-                <Label text="TRACKER" wrapText="true" maxWidth="Infinity" styleClass="logo-main" />
-            </VBox>
-            <Separator />
-            <VBox spacing="14" styleClass="nav">
-                <Button fx:id="btnDashboard" text="Home" styleClass="nav-btn" onAction="#onShowDashboard" />
-                <Button text="Add Product" styleClass="nav-btn" onAction="#onAddProduct" />
-                <Button fx:id="btnReminders" text="Notifications" styleClass="nav-btn" onAction="#onShowReminders" />
-            </VBox>
 
-            <Separator />
-            <Label text="PRODUCTS" styleClass="logo-sub" />
-            <ListView fx:id="productList" prefHeight="200" styleClass="nav-list" VBox.vgrow="ALWAYS" />
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.Cursor?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.example.ui.MainController">
+    <fx:define>
+        <ToggleGroup fx:id="filterGroup"/>
+    </fx:define>
+
+    <left>
+        <VBox styleClass="sidebar" spacing="4" minWidth="220" prefWidth="220" maxWidth="220">
+            <Label styleClass="wordmark" text="Warranty Tracker"/>
+            <Label styleClass="wordmark-sub" text="Receipts and expiry dates in one place" wrapText="true"/>
+            <Button styleClass="btn-primary" text="+ Add warranty" maxWidth="Infinity" onAction="#onAdd">
+                <VBox.margin><Insets top="20" bottom="16"/></VBox.margin>
+            </Button>
+            <Button fx:id="navAll" styleClass="nav-item" text="All warranties" maxWidth="Infinity"
+                    onAction="#onNavAll"/>
+            <Button fx:id="navExpiring" styleClass="nav-item" text="Expiring soon" maxWidth="Infinity"
+                    contentDisplay="RIGHT" graphicTextGap="8" onAction="#onNavExpiring">
+                <graphic>
+                    <Label fx:id="expiringBadge" styleClass="nav-badge"/>
+                </graphic>
+            </Button>
+            <Region VBox.vgrow="ALWAYS"/>
+            <VBox styleClass="sidebar-footer">
+                <Button styleClass="nav-item" text="Settings" maxWidth="Infinity" onAction="#onSettings"/>
+            </VBox>
         </VBox>
     </left>
 
-    <!-- TOP HEADER removed -->
-
-    <!-- CENTER: Search + Card with table -->
     <center>
-        <HBox spacing="12">
-            <VBox spacing="14" styleClass="center-area" HBox.hgrow="ALWAYS">
-            <HBox alignment="CENTER_LEFT" spacing="8" styleClass="header">
-                <Label text="Home" styleClass="header-title" />
-            </HBox>
-            <HBox alignment="CENTER_RIGHT" spacing="8" styleClass="toolbar">
-                <Region HBox.hgrow="ALWAYS" />
-                <Button text="Settings" onAction="#onOpenSettings" styleClass="outline-btn" />
-            </HBox>
-            <HBox spacing="8" alignment="CENTER_LEFT" styleClass="search-bar">
-                <TextField fx:id="searchField" promptText="Search product or model..." />
-                <Button fx:id="btnSearch" text="Search" styleClass="outline-btn" onAction="#onSearch" />
+        <VBox styleClass="content" spacing="20">
+            <HBox styleClass="page-header" alignment="CENTER_LEFT" spacing="16">
+                <VBox spacing="2" HBox.hgrow="ALWAYS">
+                    <Label fx:id="pageTitle" styleClass="page-title" text="All warranties"/>
+                    <Label fx:id="pageSubtitle" styleClass="page-subtitle"/>
+                </VBox>
+                <TextField fx:id="searchField" styleClass="search-field" prefWidth="320"
+                           promptText="Search products, models, retailers"/>
             </HBox>
 
-            <!-- Dashboard Pane (default) -->
-            <StackPane fx:id="dashboardPane" styleClass="card">
-                <VBox spacing="8">
-                    <Label text="Your Warranties" styleClass="card-title" />
-                    <!-- Card grid layout -->
-                    <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="card-scroll">
-                        <FlowPane fx:id="cardGrid" hgap="24" vgap="24" styleClass="card-grid" prefWrapLength="800" />
-                    </ScrollPane>
+            <HBox fx:id="statRow" styleClass="stat-row" spacing="16">
+                <VBox styleClass="stat-tile" userData="ALL" HBox.hgrow="ALWAYS" maxWidth="Infinity" spacing="6"
+                      onMouseClicked="#onTileClicked">
+                    <cursor><Cursor fx:constant="HAND"/></cursor>
+                    <HBox alignment="CENTER_LEFT" spacing="8">
+                        <Region styleClass="stat-dot,dot-total"/>
+                        <Label styleClass="stat-label" text="Total"/>
+                    </HBox>
+                    <Label fx:id="totalValue" styleClass="stat-value" text="0"/>
+                </VBox>
+                <VBox styleClass="stat-tile" userData="ACTIVE" HBox.hgrow="ALWAYS" maxWidth="Infinity" spacing="6"
+                      onMouseClicked="#onTileClicked">
+                    <cursor><Cursor fx:constant="HAND"/></cursor>
+                    <HBox alignment="CENTER_LEFT" spacing="8">
+                        <Region styleClass="stat-dot,dot-active"/>
+                        <Label styleClass="stat-label" text="Active"/>
+                    </HBox>
+                    <Label fx:id="activeValue" styleClass="stat-value" text="0"/>
+                </VBox>
+                <VBox styleClass="stat-tile" userData="EXPIRING" HBox.hgrow="ALWAYS" maxWidth="Infinity" spacing="6"
+                      onMouseClicked="#onTileClicked">
+                    <cursor><Cursor fx:constant="HAND"/></cursor>
+                    <HBox alignment="CENTER_LEFT" spacing="8">
+                        <Region styleClass="stat-dot,dot-expiring"/>
+                        <Label styleClass="stat-label" text="Expiring soon"/>
+                    </HBox>
+                    <Label fx:id="expiringValue" styleClass="stat-value" text="0"/>
+                </VBox>
+                <VBox styleClass="stat-tile" userData="EXPIRED" HBox.hgrow="ALWAYS" maxWidth="Infinity" spacing="6"
+                      onMouseClicked="#onTileClicked">
+                    <cursor><Cursor fx:constant="HAND"/></cursor>
+                    <HBox alignment="CENTER_LEFT" spacing="8">
+                        <Region styleClass="stat-dot,dot-expired"/>
+                        <Label styleClass="stat-label" text="Expired"/>
+                    </HBox>
+                    <Label fx:id="expiredValue" styleClass="stat-value" text="0"/>
+                </VBox>
+            </HBox>
+
+            <HBox styleClass="toolbar" alignment="CENTER_LEFT" spacing="12">
+                <HBox styleClass="segmented">
+                    <ToggleButton styleClass="segment" text="All" userData="ALL" toggleGroup="$filterGroup"
+                                  selected="true"/>
+                    <ToggleButton styleClass="segment" text="Active" userData="ACTIVE" toggleGroup="$filterGroup"/>
+                    <ToggleButton styleClass="segment" text="Expiring" userData="EXPIRING" toggleGroup="$filterGroup"/>
+                    <ToggleButton styleClass="segment" text="Expired" userData="EXPIRED" toggleGroup="$filterGroup"/>
+                </HBox>
+                <Region HBox.hgrow="ALWAYS"/>
+                <ComboBox fx:id="sortBox" prefWidth="180"/>
+            </HBox>
+
+            <StackPane VBox.vgrow="ALWAYS">
+                <ScrollPane fx:id="cardScroll" styleClass="card-scroll" fitToWidth="true" hbarPolicy="NEVER">
+                    <FlowPane fx:id="cardGrid" styleClass="card-grid" hgap="16" vgap="16"/>
+                </ScrollPane>
+                <VBox fx:id="emptyState" styleClass="empty-state" alignment="CENTER" spacing="8"
+                      visible="false" managed="false">
+                    <Label fx:id="emptyTitle" styleClass="empty-title"/>
+                    <Label fx:id="emptyText" styleClass="empty-text" wrapText="true" maxWidth="420"/>
+                    <Button fx:id="emptyAddButton" styleClass="btn-primary" text="+ Add warranty" onAction="#onAdd">
+                        <VBox.margin><Insets top="8"/></VBox.margin>
+                    </Button>
+                    <Button fx:id="emptyClearButton" styleClass="btn-secondary" text="Clear filters"
+                            onAction="#onClearFilters">
+                        <VBox.margin><Insets top="8"/></VBox.margin>
+                    </Button>
                 </VBox>
             </StackPane>
-
-            <!-- Reminders Pane (hidden until selected) -->
-            <StackPane fx:id="remindersPane" styleClass="card" visible="false" managed="false">
-                <VBox spacing="10">
-                    <Label text="Reminders" styleClass="card-title" />
-                    <ListView fx:id="remindersList" prefHeight="300" />
-                </VBox>
-            </StackPane>
-
-            
-            </VBox>
-        </HBox>
+        </VBox>
     </center>
-
-    <!-- FLOATING ACTION (visual only) -->
-    <bottom>
-        <Pane />
-    </bottom>
 </BorderPane>
