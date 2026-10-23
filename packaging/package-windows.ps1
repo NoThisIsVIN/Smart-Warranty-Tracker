@@ -47,12 +47,25 @@ if (-not $jpackage) {
     if (-not (Test-Path $jpackage)) { throw 'jpackage not found. Install JDK 21+ and put its bin folder on PATH.' }
 }
 
+# Clear the previous package first. A running copy of the app, or OneDrive/antivirus scanning the new
+# files, can hold them open for a few seconds, which otherwise makes 'mvn clean' fail.
+$dest = Join-Path $root 'target\dist'
+for ($try = 1; Test-Path $dest; $try++) {
+    try {
+        Remove-Item $dest -Recurse -Force -ErrorAction Stop
+    } catch {
+        if ($try -ge 10) {
+            throw "Could not delete $dest. Close Smart Warranty Tracker if it is running (or pause OneDrive sync) and try again."
+        }
+        Start-Sleep -Seconds 1
+    }
+}
+
 Write-Host "Building $appName $version ($Type)..."
 Invoke-Tool 'mvn' @('-B', '-q', 'clean', 'package') 'Maven build failed.'
 
 # jpackage bundles everything in --input, so give it only the app jar.
 $inputDir = Join-Path $root 'target\jpackage-input'
-$dest = Join-Path $root 'target\dist'
 New-Item -ItemType Directory -Force $inputDir, $dest | Out-Null
 $jar = "smart-warranty-tracker-$version.jar"
 Copy-Item (Join-Path 'target' $jar) $inputDir
