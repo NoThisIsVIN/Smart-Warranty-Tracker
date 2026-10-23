@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import org.example.config.AppPaths;
 import org.example.config.AppSettings;
 import org.example.model.Warranty;
 import org.example.ui.Browser;
@@ -30,8 +31,10 @@ public class MainApp extends Application {
     @Override
     public void init() {
         try {
+            AppPaths.migrateLegacyData();
             context = new SpringApplicationBuilder(SmartWarrantyTrackerApplication.class)
                     .headless(false)
+                    .properties("app.data-dir=" + AppPaths.dataDir().toString().replace('\\', '/'))
                     .run(getParameters().getRaw().toArray(String[]::new));
         } catch (RuntimeException e) {
             log.error("Application context failed to start", e);

@@ -1,5 +1,6 @@
 package org.example.service;
 
+import org.example.config.AppPaths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -16,7 +17,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Owns the app's file area: {@code data/images} and {@code data/receipts} relative to the working directory.
+ * Owns the app's file area: {@code images} and {@code receipts} under {@link AppPaths#dataDir()}.
  * Stored references are absolute file URI strings.
  */
 @Component
@@ -34,14 +35,14 @@ public class FileStorage {
     private final Path baseDir;
 
     public FileStorage() {
-        this(Path.of("data"));
+        this(AppPaths.dataDir());
     }
 
     FileStorage(Path baseDir) {
         this.baseDir = baseDir.toAbsolutePath().normalize();
     }
 
-    /** Copies {@code source} to {@code data/<dir>/<uuid><.ext>} and returns its file URI. */
+    /** Copies {@code source} to {@code <data dir>/<dir>/<uuid><.ext>} and returns its file URI. */
     public String importFile(Path source, Kind kind) throws IOException {
         Path dest = newFile(kind, extension(source.getFileName().toString()));
         Files.copy(source, dest, StandardCopyOption.REPLACE_EXISTING);
@@ -65,8 +66,8 @@ public class FileStorage {
 
     /**
      * The existing file for a stored value (file URI or plain path). If the recorded location no longer exists
-     * (e.g. the app folder was moved), looks for a file with the same name in {@code data/images} or
-     * {@code data/receipts}. Never throws.
+     * (e.g. the app folder was moved), looks for a file with the same name in {@code images} or
+     * {@code receipts}. Never throws.
      */
     public Optional<Path> resolve(String uriOrPath) {
         if (uriOrPath == null || uriOrPath.isBlank()) return Optional.empty();
@@ -83,7 +84,7 @@ public class FileStorage {
         return Optional.empty();
     }
 
-    /** Deletes the referenced file, but only if it lives inside {@code data/images} or {@code data/receipts}. */
+    /** Deletes the referenced file, but only if it lives inside {@code images} or {@code receipts}. */
     public void deleteIfOwned(String uriOrPath) {
         resolve(uriOrPath).ifPresent(path -> {
             try {

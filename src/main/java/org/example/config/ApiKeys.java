@@ -12,7 +12,7 @@ import java.nio.file.Path;
 import java.util.Properties;
 
 /**
- * Optional third-party API keys. Read from {@code data/config/image-fetch-config.properties}
+ * Optional third-party API keys. Read from {@code config/image-fetch-config.properties} in {@link AppPaths#dataDir()}
  * (written by the Settings dialog), falling back to the bundled classpath file.
  */
 @Component
@@ -24,7 +24,7 @@ public class ApiKeys {
     public static final String OCR_SPACE_KEY = "ocr.api.key";
 
     private static final Logger log = LoggerFactory.getLogger(ApiKeys.class);
-    private static final Path FILE = Path.of("data", "config", "image-fetch-config.properties");
+    private static final Path FILE = AppPaths.dataDir().resolve("config").resolve("image-fetch-config.properties");
     private static final String CLASSPATH_FILE = "/image-fetch-config.properties";
 
     private volatile Properties props;
