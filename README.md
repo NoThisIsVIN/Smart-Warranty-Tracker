@@ -4,6 +4,12 @@ A desktop app for keeping track of product warranties: what you bought, when it 
 Built with JavaFX for the UI and Spring Boot (non-web) for dependency injection, persistence and scheduling.
 Data lives in an embedded H2 database under `%APPDATA%\SmartWarrantyTracker` (`~/.smart-warranty-tracker` on other systems).
 
+![Dashboard with warranty cards, status tiles and filters](docs/screenshots/dashboard-light.png)
+
+## Download
+Get the latest Windows build from [Releases](https://github.com/NoThisIsVIN/Smart-Warranty-Tracker/releases/latest).
+Unzip it and run `SmartWarrantyTracker.exe`. Java is included.
+
 ## Features
 - **Dashboard**: cards for every warranty, with live search, status filters (Active / Expiring / Expired), sorting and summary tiles.
 - **Add and edit**: a single form with a date picker and validation. Optionally attach a receipt (image, PDF or DOCX) and the
@@ -13,6 +19,8 @@ Data lives in an embedded H2 database under `%APPDATA%\SmartWarrantyTracker` (`~
 - **Product images**: fetched in the background for warranties that don't have one (Google Custom Search if configured,
   otherwise DuckDuckGo and Wikipedia).
 - **Light and dark themes.**
+
+![The same dashboard in the dark theme](docs/screenshots/dashboard-dark.png)
 
 ## Requirements
 - JDK 21 or newer
