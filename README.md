@@ -2,7 +2,7 @@
 
 A desktop app for keeping track of product warranties: what you bought, when it expires, and where the receipt is.
 Built with JavaFX for the UI and Spring Boot (non-web) for dependency injection, persistence and scheduling.
-Data lives in an embedded H2 database under `data/`.
+Data lives in an embedded H2 database under `%APPDATA%\SmartWarrantyTracker` (`~/.smart-warranty-tracker` on other systems).
 
 ## Features
 - **Dashboard**: cards for every warranty, with live search, status filters (Active / Expiring / Expired), sorting and summary tiles.
@@ -28,8 +28,19 @@ mvn javafx:run
 mvn test
 ```
 
+## Package for Windows
+```powershell
+.\packaging\package-windows.ps1            # zip of a ready-to-run folder, Java included
+.\packaging\package-windows.ps1 -Type exe  # installer; needs the WiX Toolset on PATH
+```
+Output goes to `target\dist`.
+
+## Where data is stored
+Database, images, receipts, API keys and logs go in `%APPDATA%\SmartWarrantyTracker`.
+Set `-Dswt.data.dir=<path>` to use another folder. On first start, data from an older `./data` folder is copied over.
+
 ## Optional API keys
-Open **Settings → API keys**. Keys are stored locally in `data/config/image-fetch-config.properties`, which git ignores.
+Open **Settings → API keys**. Keys are stored locally in `config/image-fetch-config.properties` inside the data folder.
 
 | Key | Used for |
 | --- | --- |
@@ -42,7 +53,7 @@ Receipt images are sent to these OCR services only when you attach one. PDF and 
 ## Project layout
 ```
 src/main/java/org/example/
-  config/       user preferences (AppSettings) and API keys (ApiKeys)
+  config/       data folder (AppPaths), user preferences (AppSettings) and API keys (ApiKeys)
   model/        Warranty entity and WarrantyStatus
   repo/         Spring Data repository
   service/      warranty CRUD, file storage, product image lookup, shared HTTP client
@@ -53,7 +64,10 @@ src/main/java/org/example/
 src/main/resources/
   fxml/         main, detail and settings views
   styles/       app.css (tokens + components) and dark.css (dark tokens)
-data/           database, stored images and receipts (created at runtime)
+packaging/      Windows release script (jpackage)
 ```
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for how the pieces fit together.
+
+## License
+MIT. See [LICENSE](LICENSE).
